@@ -108,43 +108,18 @@ export default function SettingsScreen({ onLogout }: Props) {
         );
     };
 
-    const [renderError, setRenderError] = useState<string | null>(null);
-
-    const getAffinityRank = (val: number) => {
-        try {
-            if (val >= 1000) return '運命の二人♡';
-            if (val >= 500) return '大親友♪';
-            if (val >= 100) return '仲良し';
-            return '知り合い';
-        } catch (e: any) {
-            return '知り合い';
-        }
+    const getAffinityRank = (val: any) => {
+        const v = Number(val) || 0;
+        if (v >= 1000) return '運命の二人♡';
+        if (v >= 500) return '大親友♪';
+        if (v >= 100) return '仲良し';
+        return '知り合い';
     };
 
-    if (renderError) {
-        return (
-            <View style={[styles.container, { padding: 40, justifyContent: 'center', backgroundColor: '#000' }]}>
-                <Text style={{ color: '#ff4d4d', fontSize: 18, fontWeight: 'bold', marginBottom: 20 }}>
-                    ⚠️ レンダリングエラーが発生したみたい…
-                </Text>
-                <Text style={{ color: '#fff' }}>{renderError}</Text>
-                <TouchableOpacity
-                    style={{ marginTop: 20, padding: 15, backgroundColor: theme.primary, borderRadius: 10 }}
-                    onPress={() => setRenderError(null)}
-                >
-                    <Text style={{ color: '#fff', textAlign: 'center' }}>再試行</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
+    if (!theme) return <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator /></View>;
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-            {/* ─── デバッグ用生存確認マーカー ─── */}
-            <Text style={{ position: 'absolute', top: 0, left: 0, fontSize: 8, color: theme.textMuted, opacity: 0.1 }}>
-                LV-V113-OK
-            </Text>
-
+        <View style={[styles.container, { backgroundColor: theme.background || '#000' }]}>
             <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
                 <Text style={[styles.headerTitle, { color: theme.text }]}>⚙️ 設定</Text>
             </View>
@@ -152,11 +127,11 @@ export default function SettingsScreen({ onLogout }: Props) {
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
 
                 {/* ─── 親愛度 ─── */}
-                <View style={[styles.card, styles.affinityCard, { backgroundColor: theme.surfaceLight, borderColor: theme.primary }]}>
-                    <Text style={[styles.affinityLabel, { color: theme.textSecondary }]}>親愛度ランク</Text>
-                    <Text style={[styles.affinityValue, { color: theme.primary }]}>{getAffinityRank(Number(stats?.affinity || 0))}</Text>
+                <View style={[styles.card, styles.affinityCard, { backgroundColor: theme.surfaceLight || '#111', borderColor: theme.primary || '#7B68EE' }]}>
+                    <Text style={[styles.affinityLabel, { color: theme.textSecondary || '#aaa' }]}>親愛度ランク</Text>
+                    <Text style={[styles.affinityValue, { color: theme.primary || '#7B68EE' }]}>{getAffinityRank(stats?.affinity)}</Text>
                     <View style={styles.affinityPointsRow}>
-                        <Text style={[styles.affinityPoints, { color: theme.textMuted }]}>ポイント: {String(stats?.affinity || 0)} pts</Text>
+                        <Text style={[styles.affinityPoints, { color: theme.textMuted || '#888' }]}>ポイント: {stats?.affinity || 0} pts</Text>
                     </View>
                 </View>
 
@@ -189,15 +164,15 @@ export default function SettingsScreen({ onLogout }: Props) {
                 <View style={[styles.card, { backgroundColor: theme.surfaceLight, borderColor: theme.border }]}>
                     <View style={styles.statsGrid}>
                         <View style={styles.statItem}>
-                            <Text style={[styles.statNumber, { color: theme.primary }]}>{String(stats?.total_messages || 0)}</Text>
+                            <Text style={[styles.statNumber, { color: theme.primary }]}>{stats?.total_messages || 0}</Text>
                             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>総メッセージ</Text>
                         </View>
                         <View style={styles.statItem}>
-                            <Text style={[styles.statNumber, { color: theme.primary }]}>{String(stats?.user_messages || 0)}</Text>
+                            <Text style={[styles.statNumber, { color: theme.primary }]}>{stats?.user_messages || 0}</Text>
                             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>ぬるくん</Text>
                         </View>
                         <View style={styles.statItem}>
-                            <Text style={[styles.statNumber, { color: theme.primary }]}>{String(stats?.luna_messages || 0)}</Text>
+                            <Text style={[styles.statNumber, { color: theme.primary }]}>{stats?.luna_messages || 0}</Text>
                             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>るな</Text>
                         </View>
                     </View>
@@ -301,7 +276,7 @@ export default function SettingsScreen({ onLogout }: Props) {
                 </TouchableOpacity>
 
                 <Text style={[styles.version, { color: theme.textMuted }]}>
-                    Luna Villa v1.1.2 — 🌙 るなの別荘♡
+                    Luna Villa v1.1.0 — 🌙 るなの別荘♡
                 </Text>
             </ScrollView>
 

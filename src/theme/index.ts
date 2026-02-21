@@ -51,7 +51,7 @@ export const DarkTheme = {
     overlay: 'rgba(0, 0, 0, 0.5)',
 };
 
-// 互換性のためのデフォルトエクスポート（初期化用）
+// 互換性のためのデフォルトエクスポート（初期化用・後方互換）
 export let Colors = DarkTheme;
 
 export const Spacing = {
