@@ -65,7 +65,7 @@ function AppContent() {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <LoginScreen onLogin={() => setIsLoggedIn(true)} />
-        <StatusBar style={isDarkMode ? "light" : "dark"} />
+        <StatusBar style="light" />
       </GestureHandlerRootView>
     );
   }
@@ -145,7 +145,7 @@ function AppContent() {
           </Tab.Screen>
         </Tab.Navigator>
       </NavigationContainer>
-      <StatusBar style={isDarkMode ? "light" : "dark"} />
+      <StatusBar style="light" />
     </GestureHandlerRootView>
   );
 }

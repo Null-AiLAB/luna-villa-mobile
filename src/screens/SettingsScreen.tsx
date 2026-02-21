@@ -185,19 +185,6 @@ export default function SettingsScreen({ onLogout }: Props) {
                     </View>
                 </View>
 
-                {/* ─── テーマ ─── */}
-                <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>🎨 テーマ</Text>
-                <View style={[styles.card, { backgroundColor: theme.surfaceLight, borderColor: theme.border }]}>
-                    <View style={styles.settingRow}>
-                        <Text style={[styles.settingLabel, { color: theme.text }]}>ダークモード (推奨)</Text>
-                        <Switch
-                            value={isDarkMode}
-                            onValueChange={toggleTheme}
-                            trackColor={{ false: theme.surface, true: theme.primary }}
-                            thumbColor="#fff"
-                        />
-                    </View>
-                </View>
 
                 {/* ─── 通知設定 ─── */}
                 <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>🔔 通知設定</Text>
@@ -283,7 +270,7 @@ export default function SettingsScreen({ onLogout }: Props) {
                 </TouchableOpacity>
 
                 <Text style={[styles.version, { color: theme.textMuted }]}>
-                    Luna Villa v1.1.6 — 🌙 るなの別荘♡
+                    Luna Villa v1.1.7 — 🌙 るなの別荘♡
                 </Text>
             </ScrollView>
 

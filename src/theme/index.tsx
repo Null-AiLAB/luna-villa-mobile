@@ -1,34 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext } from 'react';
 
 /**
- * 🌙 Luna Villa — デザインテーマ
- * いろはのデザイン提案に基づくカラーパレットとスタイル定数
+ * 🌙 Luna Villa — デザインテーマ (Eternal Night Edition v1.1.7)
+ * ダークモード専用。シンプルさと安定性を極めたわ。
  */
-
-export const LightTheme = {
-    primary: '#7B68EE',
-    primaryDark: '#6152CC',
-    primaryLight: '#9B89FF',
-    background: '#F8F7FF',
-    surface: '#FFFFFF',
-    surfaceLight: '#EEECFF',
-    surfaceGlass: 'rgba(255, 255, 255, 0.8)',
-    text: '#1A1730',
-    textSecondary: '#6B6584',
-    textMuted: '#9B95B3',
-    accent: '#FF6B9D',
-    success: '#4ECDC4',
-    warning: '#FFD93D',
-    error: '#FF6B6B',
-    bubbleUser: '#7B68EE',
-    bubbleLuna: '#EEECFF',
-    bubbleUserText: '#FFFFFF',
-    bubbleLunaText: '#1A1730',
-    border: 'rgba(123, 104, 238, 0.1)',
-    shadow: 'rgba(123, 104, 238, 0.1)',
-    overlay: 'rgba(0, 0, 0, 0.3)',
-};
 
 export const DarkTheme = {
     primary: '#7B68EE',
@@ -53,6 +28,8 @@ export const DarkTheme = {
     shadow: 'rgba(123, 104, 238, 0.3)',
     overlay: 'rgba(0, 0, 0, 0.5)',
 };
+
+export const LightTheme = DarkTheme; // 互換性の維持
 
 export const Spacing = {
     xs: 4,
@@ -81,7 +58,7 @@ export const BorderRadius = {
     full: 9999,
 };
 
-// 互換性のための静的なColorsオブジェクト（安全なデフォルト）
+// 互換性のための静的なColorsオブジェクト
 export const Colors = DarkTheme;
 
 // ─── Theme Context ───
@@ -97,34 +74,10 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-    const [isDarkMode, setIsDarkMode] = useState(true);
-
-    useEffect(() => {
-        loadTheme();
-    }, []);
-
-    const loadTheme = async () => {
-        try {
-            const saved = await AsyncStorage.getItem('darkMode');
-            if (saved !== null) {
-                setIsDarkMode(saved === 'true');
-            } else {
-                setIsDarkMode(true);
-                await AsyncStorage.setItem('darkMode', 'true');
-            }
-        } catch (e) {
-            console.error('Theme load error:', e);
-            setIsDarkMode(true);
-        }
-    };
-
-    const toggleTheme = async () => {
-        const newVal = !isDarkMode;
-        setIsDarkMode(newVal);
-        await AsyncStorage.setItem('darkMode', String(newVal));
-    };
-
-    const theme = isDarkMode ? DarkTheme : LightTheme;
+    // 常にダークモード
+    const isDarkMode = true;
+    const theme = DarkTheme;
+    const toggleTheme = () => { console.log("Luna Villa is now permanently in Dark Mode! ♡") };
 
     return (
         <ThemeContext.Provider value={{ theme, isDarkMode, toggleTheme }}>
