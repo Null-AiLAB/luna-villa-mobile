@@ -107,11 +107,11 @@ export default function SettingsScreen({ onLogout }: Props) {
         );
     };
 
-    const getAffinityRank = (val: any) => {
-        const v = Number(val) || 0;
-        if (v >= 1000) return '運命の二人♡';
-        if (v >= 500) return '大親友♪';
-        if (v >= 100) return '仲良し';
+    const getAffinityRank = (level: any) => {
+        const v = Number(level) || 1;
+        if (v >= 10) return '運命の二人♡';
+        if (v >= 7) return '大親友♪';
+        if (v >= 4) return '仲良し';
         return '知り合い';
     };
 
@@ -135,10 +135,10 @@ export default function SettingsScreen({ onLogout }: Props) {
 
                 {/* ─── 親愛度 ─── */}
                 <View style={[styles.card, styles.affinityCard, { backgroundColor: theme.surfaceLight || '#111', borderColor: theme.primary || '#7B68EE' }]}>
-                    <Text style={[styles.affinityLabel, { color: theme.textSecondary || '#aaa' }]}>親愛度ランク</Text>
-                    <Text style={[styles.affinityValue, { color: theme.primary || '#7B68EE' }]}>{getAffinityRank(stats?.affinity)}</Text>
+                    <Text style={[styles.affinityLabel, { color: theme.textSecondary || '#aaa' }]}>{stats?.affinity?.label || '親密度ランク'}</Text>
+                    <Text style={[styles.affinityValue, { color: theme.primary || '#7B68EE' }]}>{stats?.affinity?.rank || getAffinityRank(stats?.affinity?.level)}</Text>
                     <View style={styles.affinityPointsRow}>
-                        <Text style={[styles.affinityPoints, { color: theme.textMuted || '#888' }]}>ポイント: {stats?.affinity || 0} pts</Text>
+                        <Text style={[styles.affinityPoints, { color: theme.textMuted || '#888' }]}>Lv.{stats?.affinity?.level || 1} (Exp: {stats?.affinity?.exp || 0}/100)</Text>
                     </View>
                 </View>
 
@@ -270,7 +270,7 @@ export default function SettingsScreen({ onLogout }: Props) {
                 </TouchableOpacity>
 
                 <Text style={[styles.version, { color: theme.textMuted }]}>
-                    Luna Villa v1.1.7 — 🌙 るなの別荘♡
+                    Luna Villa v1.1.8 — 🌙 るなの別荘♡
                 </Text>
             </ScrollView>
 
