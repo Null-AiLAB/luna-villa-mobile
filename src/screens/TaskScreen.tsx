@@ -12,7 +12,8 @@ import {
     ScrollView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Spacing, FontSize, BorderRadius, useTheme } from '../theme'; import { api } from '../api';
+import { Spacing, FontSize, BorderRadius, useTheme } from '../theme';
+import { api } from '../api';
 import { scheduleReminder } from '../utils/notifications';
 
 interface Task {

@@ -11,7 +11,8 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { Calendar, DateData, LocaleConfig } from 'react-native-calendars';
-import { Spacing, FontSize, BorderRadius, useTheme } from '../theme'; import { api } from '../api';
+import { Spacing, FontSize, BorderRadius, useTheme } from '../theme';
+import { api } from '../api';
 import { scheduleReminder } from '../utils/notifications';
 
 // 日本語ロケール

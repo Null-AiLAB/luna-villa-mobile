@@ -12,7 +12,8 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Spacing, FontSize, BorderRadius, useTheme } from '../theme'; import { api } from '../api';
+import { Spacing, FontSize, BorderRadius, useTheme } from '../theme';
+import { api } from '../api';
 import AvatarCropModal from '../components/AvatarCropModal';
 import { scheduleTestNotification } from '../utils/notifications';
 
@@ -282,7 +283,7 @@ export default function SettingsScreen({ onLogout }: Props) {
                 </TouchableOpacity>
 
                 <Text style={[styles.version, { color: theme.textMuted }]}>
-                    Luna Villa v1.1.0 — 🌙 るなの別荘♡
+                    Luna Villa v1.1.4 — 🌙 るなの別荘♡
                 </Text>
             </ScrollView>
 

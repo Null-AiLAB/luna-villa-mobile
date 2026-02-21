@@ -11,6 +11,8 @@ import { Text, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { api } from './src/api';
 import { ThemeProvider, useTheme } from './src/theme';
+import { initLogger } from './src/utils/logger';
+import { GlobalErrorBoundary } from './src/components/GlobalErrorBoundary';
 import LoginScreen from './src/screens/LoginScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
@@ -149,10 +151,17 @@ function AppContent() {
 }
 
 export default function App() {
+  useEffect(() => {
+    initLogger();
+    console.log("🌙 Luna Villa v1.1.4 Rescue Mode Active! ♡");
+  }, []);
+
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <GlobalErrorBoundary>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
+    </GlobalErrorBoundary>
   );
 }
 
