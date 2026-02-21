@@ -10,7 +10,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { api } from './src/api';
-import { ThemeProvider, useTheme } from './src/theme';
+import { ThemeProvider, useTheme, DarkTheme } from './src/theme';
 import { initLogger } from './src/utils/logger';
 import { GlobalErrorBoundary } from './src/components/GlobalErrorBoundary';
 import LoginScreen from './src/screens/LoginScreen';
@@ -24,12 +24,12 @@ const Tab = createBottomTabNavigator();
 
 // タブアイコン
 function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
-  const { theme } = useTheme();
+  const { theme = DarkTheme } = useTheme() || {};
   return (
     <Text style={{
       fontSize: focused ? 26 : 22,
       opacity: focused ? 1 : 0.5,
-      color: focused ? theme.primary : theme.textSecondary
+      color: focused ? (theme.primary || '#7B68EE') : (theme.textSecondary || '#9B95B3')
     }}>
       {icon}
     </Text>
@@ -39,7 +39,7 @@ function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { theme, isDarkMode } = useTheme();
+  const { theme = DarkTheme, isDarkMode = true } = useTheme() || {};
 
   useEffect(() => {
     checkAuth();
@@ -53,8 +53,8 @@ function AppContent() {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.primary} />
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background || '#0D0B1A' }]}>
+        <ActivityIndicator size="large" color={theme.primary || '#7B68EE'} />
         <Text style={styles.loadingText}>🌙</Text>
         <StatusBar style={isDarkMode ? "light" : "dark"} />
       </View>
@@ -77,15 +77,15 @@ function AppContent() {
           screenOptions={{
             headerShown: false,
             tabBarStyle: {
-              backgroundColor: theme.surface,
-              borderTopColor: theme.border,
+              backgroundColor: theme.surface || '#1A1730',
+              borderTopColor: theme.border || 'rgba(123, 104, 238, 0.2)',
               borderTopWidth: 1,
               height: 65,
               paddingBottom: 10,
               paddingTop: 5,
             },
-            tabBarActiveTintColor: theme.primary,
-            tabBarInactiveTintColor: theme.textMuted,
+            tabBarActiveTintColor: theme.primary || '#7B68EE',
+            tabBarInactiveTintColor: theme.textMuted || '#6B6584',
             tabBarLabelStyle: {
               fontSize: 11,
               fontWeight: '600',

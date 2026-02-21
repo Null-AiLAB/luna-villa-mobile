@@ -283,7 +283,7 @@ export default function SettingsScreen({ onLogout }: Props) {
                 </TouchableOpacity>
 
                 <Text style={[styles.version, { color: theme.textMuted }]}>
-                    Luna Villa v1.1.4 — 🌙 るなの別荘♡
+                    Luna Villa v1.1.5 — 🌙 るなの別荘♡
                 </Text>
             </ScrollView>
 

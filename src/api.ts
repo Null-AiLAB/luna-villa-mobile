@@ -1,6 +1,6 @@
 /**
  * 🔗 Luna Villa — APIクライアント
- * FastAPIバックエンドとの通信を管理する。 v1.1.0 強化版。
+ * FastAPIバックエンドとの通信を管理する。 v1.1.4 強化版。
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
