@@ -19,7 +19,8 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { documentDirectory, copyAsync } from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Colors, Spacing, FontSize, BorderRadius } from '../theme';
+// 🎨 直接テーマ定数を参照（初期化エラー回避のため）
+import { DarkTheme, Spacing, FontSize, BorderRadius } from '../theme';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CROP_SIZE = SCREEN_WIDTH * 0.7; // 切り抜き円のサイズ
@@ -339,22 +340,22 @@ const styles = StyleSheet.create({
         paddingTop: 50,
         paddingBottom: Spacing.md,
         paddingHorizontal: Spacing.lg,
-        backgroundColor: Colors.surface,
+        backgroundColor: DarkTheme.surface,
         borderBottomWidth: 1,
-        borderBottomColor: Colors.border,
+        borderBottomColor: DarkTheme.border,
     },
     headerTitle: {
         fontSize: FontSize.lg,
         fontWeight: '700',
-        color: Colors.text,
+        color: DarkTheme.text,
     },
     headerButton: {
         fontSize: FontSize.md,
-        color: Colors.textSecondary,
+        color: DarkTheme.textSecondary,
         minWidth: 60,
     },
     headerSave: {
-        color: Colors.primary,
+        color: DarkTheme.primary,
         fontWeight: '700',
         textAlign: 'right',
     },
@@ -390,7 +391,7 @@ const styles = StyleSheet.create({
         height: CROP_SIZE,
         borderRadius: CROP_SIZE / 2,
         borderWidth: 2,
-        borderColor: Colors.primary,
+        borderColor: DarkTheme.primary,
         backgroundColor: 'transparent',
         // 丸をくり抜く効果は周囲の暗いオーバーレイで実現
         // 実際の「穴」にはならないが視覚的に十分
@@ -405,7 +406,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     sliderLabel: {
-        color: Colors.textSecondary,
+        color: DarkTheme.textSecondary,
         fontSize: FontSize.sm,
         marginBottom: Spacing.md,
         fontWeight: '600',
@@ -417,7 +418,7 @@ const styles = StyleSheet.create({
     },
     sliderBar: {
         height: 4,
-        backgroundColor: Colors.surfaceLight,
+        backgroundColor: DarkTheme.surfaceLight,
         borderRadius: 2,
     },
     sliderThumbContainer: {
@@ -430,7 +431,7 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: Colors.primary,
+        backgroundColor: DarkTheme.primary,
         borderWidth: 3,
         borderColor: '#fff',
         position: 'absolute',
@@ -442,7 +443,7 @@ const styles = StyleSheet.create({
     },
     hintText: {
         fontSize: FontSize.xs,
-        color: Colors.textMuted,
+        color: DarkTheme.textMuted,
     },
     // ─── 画像選択 ─────────
     pickerArea: {
@@ -455,11 +456,11 @@ const styles = StyleSheet.create({
         width: 120,
         height: 120,
         borderRadius: 60,
-        backgroundColor: Colors.surfaceLight,
+        backgroundColor: DarkTheme.surfaceLight,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 3,
-        borderColor: Colors.primary,
+        borderColor: DarkTheme.primary,
         borderStyle: 'dashed',
         marginBottom: Spacing.xl,
     },
@@ -469,17 +470,17 @@ const styles = StyleSheet.create({
     pickerTitle: {
         fontSize: FontSize.xl,
         fontWeight: '700',
-        color: Colors.text,
+        color: DarkTheme.text,
         marginBottom: Spacing.sm,
     },
     pickerDesc: {
         fontSize: FontSize.md,
-        color: Colors.textSecondary,
+        color: DarkTheme.textSecondary,
         marginBottom: Spacing.xl,
         textAlign: 'center',
     },
     pickButton: {
-        backgroundColor: Colors.primary,
+        backgroundColor: DarkTheme.primary,
         borderRadius: BorderRadius.xl,
         paddingVertical: Spacing.md,
         paddingHorizontal: Spacing.xxl,

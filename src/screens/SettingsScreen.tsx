@@ -126,9 +126,9 @@ export default function SettingsScreen({ onLogout }: Props) {
                 {/* ─── 親愛度 ─── */}
                 <View style={[styles.card, styles.affinityCard, { backgroundColor: theme.surfaceLight, borderColor: theme.primary }]}>
                     <Text style={[styles.affinityLabel, { color: theme.textSecondary }]}>親愛度ランク</Text>
-                    <Text style={[styles.affinityValue, { color: theme.primary }]}>{getAffinityRank(stats?.affinity || 0)}</Text>
+                    <Text style={[styles.affinityValue, { color: theme.primary }]}>{getAffinityRank(Number(stats?.affinity || 0))}</Text>
                     <View style={styles.affinityPointsRow}>
-                        <Text style={[styles.affinityPoints, { color: theme.textMuted }]}>ポイント: {stats?.affinity || 0} pts</Text>
+                        <Text style={[styles.affinityPoints, { color: theme.textMuted }]}>ポイント: {String(stats?.affinity || 0)} pts</Text>
                     </View>
                 </View>
 
@@ -161,15 +161,15 @@ export default function SettingsScreen({ onLogout }: Props) {
                 <View style={[styles.card, { backgroundColor: theme.surfaceLight, borderColor: theme.border }]}>
                     <View style={styles.statsGrid}>
                         <View style={styles.statItem}>
-                            <Text style={[styles.statNumber, { color: theme.primary }]}>{stats?.total_messages || 0}</Text>
+                            <Text style={[styles.statNumber, { color: theme.primary }]}>{String(stats?.total_messages || 0)}</Text>
                             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>総メッセージ</Text>
                         </View>
                         <View style={styles.statItem}>
-                            <Text style={[styles.statNumber, { color: theme.primary }]}>{stats?.user_messages || 0}</Text>
+                            <Text style={[styles.statNumber, { color: theme.primary }]}>{String(stats?.user_messages || 0)}</Text>
                             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>ぬるくん</Text>
                         </View>
                         <View style={styles.statItem}>
-                            <Text style={[styles.statNumber, { color: theme.primary }]}>{stats?.luna_messages || 0}</Text>
+                            <Text style={[styles.statNumber, { color: theme.primary }]}>{String(stats?.luna_messages || 0)}</Text>
                             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>るな</Text>
                         </View>
                     </View>
