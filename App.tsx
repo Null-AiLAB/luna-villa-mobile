@@ -34,6 +34,10 @@ function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
   );
 }
 
+function SettingsWrapper({ onLogout }: { onLogout: () => void }) {
+  return <SettingsScreen onLogout={onLogout} />;
+}
+
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -139,7 +143,7 @@ function AppContent() {
               ),
             }}
           >
-            {() => <SettingsScreen onLogout={() => setIsLoggedIn(false)} />}
+            {() => <SettingsWrapper onLogout={() => setIsLoggedIn(false)} />}
           </Tab.Screen>
         </Tab.Navigator>
       </NavigationContainer>

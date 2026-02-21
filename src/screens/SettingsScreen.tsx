@@ -108,15 +108,43 @@ export default function SettingsScreen({ onLogout }: Props) {
         );
     };
 
+    const [renderError, setRenderError] = useState<string | null>(null);
+
     const getAffinityRank = (val: number) => {
-        if (val >= 1000) return '運命の二人♡';
-        if (val >= 500) return '大親友♪';
-        if (val >= 100) return '仲良し';
-        return '知り合い';
+        try {
+            if (val >= 1000) return '運命の二人♡';
+            if (val >= 500) return '大親友♪';
+            if (val >= 100) return '仲良し';
+            return '知り合い';
+        } catch (e: any) {
+            return '知り合い';
+        }
     };
+
+    if (renderError) {
+        return (
+            <View style={[styles.container, { padding: 40, justifyContent: 'center', backgroundColor: '#000' }]}>
+                <Text style={{ color: '#ff4d4d', fontSize: 18, fontWeight: 'bold', marginBottom: 20 }}>
+                    ⚠️ レンダリングエラーが発生したみたい…
+                </Text>
+                <Text style={{ color: '#fff' }}>{renderError}</Text>
+                <TouchableOpacity
+                    style={{ marginTop: 20, padding: 15, backgroundColor: theme.primary, borderRadius: 10 }}
+                    onPress={() => setRenderError(null)}
+                >
+                    <Text style={{ color: '#fff', textAlign: 'center' }}>再試行</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
+            {/* ─── デバッグ用生存確認マーカー ─── */}
+            <Text style={{ position: 'absolute', top: 0, left: 0, fontSize: 8, color: theme.textMuted, opacity: 0.1 }}>
+                LV-V113-OK
+            </Text>
+
             <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
                 <Text style={[styles.headerTitle, { color: theme.text }]}>⚙️ 設定</Text>
             </View>
