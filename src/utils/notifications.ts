@@ -7,16 +7,26 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 
-// 通知の表示設定
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-        shouldShowBanner: true,
-        shouldShowList: true,
-    }),
-});
+// 通知の初期化状況
+let isInitialized = false;
+
+function ensureInitialized() {
+    if (isInitialized) return;
+    try {
+        Notifications.setNotificationHandler({
+            handleNotification: async () => ({
+                shouldShowAlert: true,
+                shouldPlaySound: true,
+                shouldSetBadge: false,
+                shouldShowBanner: true,
+                shouldShowList: true,
+            }),
+        });
+        isInitialized = true;
+    } catch (e) {
+        console.error('Notification init error:', e);
+    }
+}
 
 /**
  * 通知の初期設定と権限のリクエスト
@@ -53,6 +63,7 @@ export async function registerForPushNotificationsAsync() {
  * 即座にローカル通知を送る（テスト用）
  */
 export async function scheduleTestNotification() {
+    ensureInitialized();
     await Notifications.scheduleNotificationAsync({
         content: {
             title: "おーい、ぬるくん！🌙",
@@ -71,6 +82,7 @@ export async function scheduleTestNotification() {
  * @param minutesBefore 何分前に通知するか（配列）
  */
 export async function scheduleReminder(id: number, title: string, dateStr: string, minutesBefore: number[] = [30, 10]) {
+    ensureInitialized();
     // 既存の通知があればキャンセル（簡易的にIDをキーワードにする）
     await Notifications.cancelAllScheduledNotificationsAsync();
 

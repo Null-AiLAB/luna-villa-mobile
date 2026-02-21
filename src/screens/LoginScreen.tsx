@@ -12,8 +12,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Spacing, FontSize, BorderRadius } from '../theme';
-import { useTheme } from '../theme/ThemeContext';
-import { api } from '../api';
+import { useTheme } from '../theme'; import { api } from '../api';
 
 interface Props {
     onLogin: () => void;

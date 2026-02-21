@@ -10,7 +10,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { api } from './src/api';
-import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { ThemeProvider, useTheme } from './src/theme';
 import LoginScreen from './src/screens/LoginScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import CalendarScreen from './src/screens/CalendarScreen';

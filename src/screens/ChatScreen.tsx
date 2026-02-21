@@ -16,8 +16,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { readAsStringAsync, EncodingType } from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Spacing, FontSize, BorderRadius } from '../theme';
-import { useTheme } from '../theme/ThemeContext';
+import { Spacing, FontSize, BorderRadius, useTheme } from '../theme';
 import { api } from '../api';
 
 interface Message {

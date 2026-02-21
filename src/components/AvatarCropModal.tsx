@@ -20,7 +20,6 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { documentDirectory, copyAsync } from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Spacing, FontSize, BorderRadius } from '../theme';
-
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CROP_SIZE = SCREEN_WIDTH * 0.7; // 切り抜き円のサイズ
 const MIN_SCALE = 0.5;
@@ -344,17 +343,17 @@ const styles = StyleSheet.create({
         borderBottomColor: Colors?.border || 'rgba(0,0,0,0.1)',
     },
     headerTitle: {
-        fontSize: FontSize.lg,
+        fontSize: FontSize.lg || 16,
         fontWeight: '700',
-        color: Colors.text,
+        color: Colors?.text || '#F0ECF9',
     },
     headerButton: {
-        fontSize: FontSize.md,
-        color: Colors.textSecondary,
+        fontSize: FontSize.md || 14,
+        color: Colors?.textSecondary || '#9B95B3',
         minWidth: 60,
     },
     headerSave: {
-        color: Colors.primary,
+        color: Colors?.primary || '#7B68EE',
         fontWeight: '700',
         textAlign: 'right',
     },

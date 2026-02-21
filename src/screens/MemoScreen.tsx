@@ -13,9 +13,7 @@ import {
     Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Spacing, FontSize, BorderRadius } from '../theme';
-import { useTheme } from '../theme/ThemeContext';
-import { api } from '../api';
+import { Spacing, FontSize, BorderRadius, useTheme } from '../theme'; import { api } from '../api';
 
 interface Memo {
     id: number;

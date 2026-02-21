@@ -12,9 +12,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Spacing, FontSize, BorderRadius } from '../theme';
-import { useTheme } from '../theme/ThemeContext';
-import { api } from '../api';
+import { Spacing, FontSize, BorderRadius, useTheme } from '../theme'; import { api } from '../api';
 import AvatarCropModal from '../components/AvatarCropModal';
 import { scheduleTestNotification } from '../utils/notifications';
 
@@ -116,10 +114,18 @@ export default function SettingsScreen({ onLogout }: Props) {
         return '知り合い';
     };
 
-    if (!theme) return <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator /></View>;
+    // 究極のセーフガード
+    if (!theme) {
+        return (
+            <View style={{ flex: 1, backgroundColor: '#0D0B1A', justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator color="#7B68EE" />
+                <Text style={{ color: '#9B95B3', marginTop: 10 }}>読み込み中よ…🌙</Text>
+            </View>
+        );
+    }
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background || '#000' }]}>
+        <View style={[styles.container, { backgroundColor: theme.background || '#0D0B1A' }]}>
             <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
                 <Text style={[styles.headerTitle, { color: theme.text }]}>⚙️ 設定</Text>
             </View>
@@ -298,9 +304,9 @@ const styles = StyleSheet.create({
     affinityCard: { alignItems: 'center', paddingVertical: Spacing.lg, marginBottom: Spacing.md, borderWidth: 2 },
     affinityLabel: { fontSize: FontSize.sm, fontWeight: '600', marginBottom: 4 },
     affinityValue: { fontSize: FontSize.xxl, fontWeight: '800', marginBottom: 8 },
-    affinityPointsRow: { backgroundColor: 'rgba(0,0,0,0.05)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 },
+    affinityPointsRow: { backgroundColor: 'rgba(123, 104, 238, 0.05)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 },
     affinityPoints: { fontSize: 10, fontWeight: '700' },
-    sectionTitle: { fontSize: FontSize.sm, fontWeight: '700', marginTop: Spacing.lg, marginBottom: Spacing.sm },
+    sectionTitle: { fontSize: FontSize.sm || 12, fontWeight: '700', marginTop: Spacing.lg || 24, marginBottom: Spacing.sm || 8 },
     card: { borderRadius: BorderRadius.lg, padding: Spacing.md, borderWidth: 1 },
     avatarSection: { alignItems: 'center', paddingVertical: Spacing.sm },
     avatarPreview: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 3, overflow: 'hidden', marginBottom: Spacing.md },
