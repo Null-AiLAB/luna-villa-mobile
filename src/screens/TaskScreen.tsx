@@ -12,7 +12,7 @@ import {
     ScrollView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Spacing, FontSize, BorderRadius, useTheme } from '../theme';
+import { Spacing, FontSize, BorderRadius, useTheme, DarkTheme } from '../theme';
 import { api } from '../api';
 import { scheduleReminder } from '../utils/notifications';
 
@@ -28,7 +28,7 @@ interface Task {
 }
 
 export default function TaskScreen() {
-    const { theme } = useTheme();
+    const { theme = DarkTheme } = useTheme() || {};
     const [tasks, setTasks] = useState<Task[]>([]);
     const [history, setHistory] = useState<any[]>([]);
     const [viewMode, setViewMode] = useState<'active' | 'history'>('active');

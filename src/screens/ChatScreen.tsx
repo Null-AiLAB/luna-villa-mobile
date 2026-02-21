@@ -16,7 +16,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { readAsStringAsync, EncodingType } from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Spacing, FontSize, BorderRadius, useTheme } from '../theme';
+import { Spacing, FontSize, BorderRadius, useTheme, DarkTheme } from '../theme';
 import { api } from '../api';
 
 interface Message {
@@ -28,7 +28,7 @@ interface Message {
 }
 
 export default function ChatScreen() {
-    const { theme, isDarkMode } = useTheme();
+    const { theme = DarkTheme, isDarkMode = true } = useTheme() || {};
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -193,12 +193,12 @@ export default function ChatScreen() {
 
                     <View style={[
                         styles.bubble,
-                        isUser ? { backgroundColor: theme.bubbleUser, borderBottomRightRadius: 4 }
-                            : { backgroundColor: theme.bubbleLuna, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: theme.border },
+                        isUser ? { backgroundColor: theme.bubbleUser || '#7B68EE', borderBottomRightRadius: 4 }
+                            : { backgroundColor: theme.bubbleLuna || '#252240', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: theme.border || 'rgba(123, 104, 238, 0.2)' },
                     ]}>
                         <Text style={[
                             styles.bubbleText,
-                            isUser ? { color: theme.bubbleUserText } : { color: theme.bubbleLunaText },
+                            isUser ? { color: theme.bubbleUserText || '#FFFFFF' } : { color: theme.bubbleLunaText || '#F0ECF9' },
                         ]}>
                             {item.content || (isStreaming ? '...' : '')}
                         </Text>

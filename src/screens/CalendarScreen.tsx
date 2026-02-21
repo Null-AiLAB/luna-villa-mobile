@@ -11,7 +11,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { Calendar, DateData, LocaleConfig } from 'react-native-calendars';
-import { Spacing, FontSize, BorderRadius, useTheme } from '../theme';
+import { Spacing, FontSize, BorderRadius, useTheme, DarkTheme } from '../theme';
 import { api } from '../api';
 import { scheduleReminder } from '../utils/notifications';
 
@@ -36,7 +36,7 @@ interface CalEvent {
 }
 
 export default function CalendarScreen() {
-    const { theme } = useTheme();
+    const { theme = DarkTheme } = useTheme() || {};
     const [selectedDate, setSelectedDate] = useState(
         new Date().toISOString().split('T')[0]
     );

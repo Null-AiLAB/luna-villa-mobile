@@ -13,7 +13,7 @@ import {
     Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Spacing, FontSize, BorderRadius, useTheme } from '../theme';
+import { Spacing, FontSize, BorderRadius, useTheme, DarkTheme } from '../theme';
 import { api } from '../api';
 
 interface Memo {
@@ -24,7 +24,7 @@ interface Memo {
 }
 
 export default function MemoScreen() {
-    const { theme } = useTheme();
+    const { theme = DarkTheme } = useTheme() || {};
     const [memos, setMemos] = useState<Memo[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());

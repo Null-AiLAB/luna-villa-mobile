@@ -135,9 +135,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 export function useTheme() {
     const context = useContext(ThemeContext);
-    if (!context) {
-        // 万が一ThemeProviderの外で呼ばれた場合でもクラッシュさせない
-        return { theme: DarkTheme, isDarkMode: true, toggleTheme: () => { } };
-    }
-    return context;
+    return {
+        theme: context?.theme || DarkTheme,
+        isDarkMode: context?.isDarkMode ?? true,
+        toggleTheme: context?.toggleTheme || (() => { })
+    };
 }

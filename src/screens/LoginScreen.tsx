@@ -11,15 +11,15 @@ import {
     Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Spacing, FontSize, BorderRadius } from '../theme';
-import { useTheme } from '../theme'; import { api } from '../api';
+import { Spacing, FontSize, BorderRadius, useTheme, DarkTheme } from '../theme';
+import { api } from '../api';
 
 interface Props {
     onLogin: () => void;
 }
 
-export default function LoginScreen({ onLogin }: Props) {
-    const { theme } = useTheme();
+export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
+    const { theme = DarkTheme } = useTheme() || {};
     const [password, setPassword] = useState('');
     const [serverUrl, setServerUrl] = useState(api.getServerUrl());
     const [loading, setLoading] = useState(false);

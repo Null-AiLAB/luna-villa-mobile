@@ -12,7 +12,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Spacing, FontSize, BorderRadius, useTheme } from '../theme';
+import { Spacing, FontSize, BorderRadius, useTheme, DarkTheme } from '../theme';
 import { api } from '../api';
 import AvatarCropModal from '../components/AvatarCropModal';
 import { scheduleTestNotification } from '../utils/notifications';
@@ -22,7 +22,7 @@ interface Props {
 }
 
 export default function SettingsScreen({ onLogout }: Props) {
-    const { theme, isDarkMode, toggleTheme } = useTheme();
+    const { theme = DarkTheme, isDarkMode = true, toggleTheme } = useTheme() || {};
     const [notifEnabled, setNotifEnabled] = useState(true);
     const [serverUrl, setServerUrl] = useState(api.getServerUrl());
     const [editingUrl, setEditingUrl] = useState(false);
@@ -283,7 +283,7 @@ export default function SettingsScreen({ onLogout }: Props) {
                 </TouchableOpacity>
 
                 <Text style={[styles.version, { color: theme.textMuted }]}>
-                    Luna Villa v1.1.5 — 🌙 るなの別荘♡
+                    Luna Villa v1.1.6 — 🌙 るなの別荘♡
                 </Text>
             </ScrollView>
 
