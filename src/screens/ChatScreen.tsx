@@ -12,6 +12,8 @@ import {
     Animated,
     Image,
     ActivityIndicator,
+    Modal,
+    Switch,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,6 +21,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Spacing, FontSize, BorderRadius, useTheme, DarkTheme } from '../theme';
 import { api } from '../api';
+import { debugStore } from '../utils/debugStore';
 
 interface Message {
     id: string;
@@ -43,7 +46,68 @@ export default function ChatScreen() {
         useRef(new Animated.Value(0)).current,
         useRef(new Animated.Value(0)).current,
     ];
+    const [debugTaps, setDebugTaps] = useState(0);
+    const [showDebugModal, setShowDebugModal] = useState(false);
+    const [debugEnabled, setDebugEnabled] = useState(false);
+    const [debugHour, setDebugHour] = useState(new Date().getHours());
+    const [debugAffinity, setDebugAffinity] = useState(1);
+
     const auraScale = useRef(new Animated.Value(1)).current;
+
+    // 履歴読み込み
+    useEffect(() => {
+        loadHistory();
+        loadAvatar();
+        loadDebugSettings(); // Added loadDebugSettings
+    }, []);
+
+    const loadAvatar = async () => {
+        const saved = await AsyncStorage.getItem('luna_avatar_uri');
+        if (saved) setAvatarUri(saved);
+    };
+
+    const loadDebugSettings = async () => {
+        const enabled = await debugStore.getIsEnabled();
+        const hour = await debugStore.getVirtualHour();
+        const aff = await debugStore.getAffinityOverride();
+        setDebugEnabled(enabled);
+        if (hour !== null) setDebugHour(hour);
+        if (aff !== null) setDebugAffinity(aff);
+    };
+
+    const handleHeaderTap = () => {
+        const newCount = debugTaps + 1;
+        setDebugTaps(newCount);
+        if (newCount >= 5) {
+            setDebugTaps(0);
+            setShowDebugModal(true);
+        }
+        // 3秒後にリセット
+        setTimeout(() => setDebugTaps(0), 3000);
+    };
+
+    const saveDebugSettings = async () => {
+        await debugStore.setIsEnabled(debugEnabled);
+        await debugStore.setVirtualHour(debugEnabled ? debugHour : null);
+        await debugStore.setAffinityOverride(debugEnabled ? debugAffinity : null);
+        setShowDebugModal(false);
+    };
+
+    const loadHistory = async () => {
+        try {
+            const history = await api.getHistory(50);
+            const mapped = history.map((m: any) => ({
+                id: String(m.id),
+                role: m.role === 'user' ? 'user' : 'luna',
+                content: m.content,
+                timestamp: m.created_at,
+                isMemo: m.is_memo,
+            }));
+            setMessages(mapped as Message[]);
+        } catch (err) {
+            console.error('Failed to load history', err);
+        }
+    };
 
     const startThinkingAnimation = useCallback(() => {
         const createDotAnim = (anim: Animated.Value, delay: number) => {
@@ -65,33 +129,6 @@ export default function ChatScreen() {
             anim.setValue(0);
         });
     }, [dotAnims]);
-
-    // 履歴読み込み
-    useEffect(() => {
-        loadHistory();
-        loadAvatar();
-    }, []);
-
-    const loadAvatar = async () => {
-        const saved = await AsyncStorage.getItem('luna_avatar_uri');
-        if (saved) setAvatarUri(saved);
-    };
-
-    const loadHistory = async () => {
-        try {
-            const history = await api.getHistory(50);
-            const mapped = history.map((m: any) => ({
-                id: String(m.id),
-                role: m.role === 'user' ? 'user' : 'luna',
-                content: m.content,
-                timestamp: m.created_at,
-                isMemo: m.is_memo,
-            }));
-            setMessages(mapped as Message[]);
-        } catch (err) {
-            console.error('Failed to load history', err);
-        }
-    };
 
     const scrollToBottom = () => {
         setTimeout(() => {
@@ -251,12 +288,61 @@ export default function ChatScreen() {
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-                <Text style={[styles.headerTitle, { color: theme.text }]}>るな</Text>
+                <TouchableOpacity onPress={handleHeaderTap} activeOpacity={1}>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>るな</Text>
+                </TouchableOpacity>
                 <View style={[styles.statusDot, isStreaming ? { backgroundColor: theme.primary } : { backgroundColor: theme.success }]} />
                 <Text style={[styles.headerStatus, { color: theme.textSecondary }]}>
                     {isStreaming ? 'typing...' : 'online'}
                 </Text>
             </View>
+
+            {/* Debug Modal */}
+            <Modal visible={showDebugModal} transparent animationType="fade">
+                <View style={styles.debugOverlay}>
+                    <View style={[styles.debugPanel, { backgroundColor: theme.surface }]}>
+                        <Text style={[styles.debugTitle, { color: theme.text }]}>🛠 デバッグシミュレーター</Text>
+
+                        <View style={styles.debugRow}>
+                            <Text style={{ color: theme.text }}>シミュレーション有効</Text>
+                            <Switch value={debugEnabled} onValueChange={setDebugEnabled} />
+                        </View>
+
+                        <View style={styles.debugItem}>
+                            <Text style={{ color: theme.textSecondary }}>仮想時刻: {debugHour}時</Text>
+                            <View style={styles.debugControls}>
+                                <TouchableOpacity onPress={() => setDebugHour(Math.max(0, debugHour - 1))} style={styles.debugBtn}>
+                                    <Text style={{ color: '#fff' }}>-</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setDebugHour(Math.min(23, debugHour + 1))} style={styles.debugBtn}>
+                                    <Text style={{ color: '#fff' }}>+</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        <View style={styles.debugItem}>
+                            <Text style={{ color: theme.textSecondary }}>親密度レベル: {debugAffinity}</Text>
+                            <View style={styles.debugControls}>
+                                <TouchableOpacity onPress={() => setDebugAffinity(Math.max(1, debugAffinity - 1))} style={styles.debugBtn}>
+                                    <Text style={{ color: '#fff' }}>-</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => setDebugAffinity(Math.min(100, debugAffinity + 1))} style={styles.debugBtn}>
+                                    <Text style={{ color: '#fff' }}>+</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        <View style={styles.debugActions}>
+                            <TouchableOpacity onPress={() => setShowDebugModal(false)} style={[styles.debugActionBtn, { backgroundColor: theme.border }]}>
+                                <Text style={{ color: theme.text }}>キャンセル</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={saveDebugSettings} style={[styles.debugActionBtn, { backgroundColor: theme.primary }]}>
+                                <Text style={{ color: '#fff' }}>適用して保存</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
 
             <FlatList
                 ref={flatListRef}
@@ -475,9 +561,7 @@ const styles = StyleSheet.create({
         paddingVertical: Spacing.sm,
     },
     auraIcon: {
-        fontSize: 12,
-        alignSelf: 'center',
-        marginTop: 4,
+        fontSize: 24,
     },
     auraContainer: {
         width: 24,
@@ -518,5 +602,59 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 18,
         fontWeight: '700',
+    },
+    // Debug Modal Styles
+    debugOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    debugPanel: {
+        width: '85%',
+        padding: 20,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#333',
+    },
+    debugTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    debugRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    debugItem: {
+        marginBottom: 20,
+    },
+    debugControls: {
+        flexDirection: 'row',
+        marginTop: 10,
+        gap: 15,
+    },
+    debugBtn: {
+        backgroundColor: '#444',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 10,
+        minWidth: 50,
+        alignItems: 'center',
+    },
+    debugActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 10,
+    },
+    debugActionBtn: {
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 12,
+        flex: 0.45,
+        alignItems: 'center',
     },
 });

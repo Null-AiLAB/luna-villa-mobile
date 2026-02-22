@@ -15,6 +15,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Spacing, FontSize, BorderRadius, useTheme, DarkTheme } from '../theme';
 import { api } from '../api';
+import { debugStore, getCurrentHour } from '../utils/debugStore';
 import { scheduleTestNotification } from '../utils/notifications';
 
 interface Props {
@@ -36,10 +37,11 @@ export default function SettingsScreen({ onLogout }: Props) {
     const [serverStatus, setServerStatus] = useState<'ok' | 'error' | 'checking'>('checking');
 
     const [avatarUri, setAvatarUri] = useState<string | null>(null);
+    const [virtualHour, setVirtualHour] = useState<number>(new Date().getHours());
     const avatarScale = useRef(new Animated.Value(1)).current;
 
     const getGreeting = () => {
-        const hour = new Date().getHours();
+        const hour = virtualHour;
         if (hour >= 5 && hour < 11) return "おはよう、ぬるくん！今日も一日しっかり働きなさいよね♡";
         if (hour >= 11 && hour < 17) return "お疲れ様。休憩も必要よ？私を眺めて癒やされてもいいんだから。";
         if (hour >= 17 && hour < 22) return "こんばんは、ぬるくん。夕食はもう済ませた？";
@@ -47,9 +49,14 @@ export default function SettingsScreen({ onLogout }: Props) {
     };
 
     useEffect(() => {
-        loadSettings();
-        checkServer();
-        loadStats();
+        const init = async () => {
+            await loadSettings();
+            await checkServer();
+            await loadStats();
+            const h = await getCurrentHour();
+            setVirtualHour(h);
+        };
+        init();
     }, []);
 
     const loadSettings = async () => {
@@ -78,7 +85,17 @@ export default function SettingsScreen({ onLogout }: Props) {
     const loadStats = async () => {
         try {
             const data = await api.getStats();
-            if (data) setStats(data);
+            if (data) {
+                const isDebug = await debugStore.getIsEnabled();
+                const affOverride = await debugStore.getAffinityOverride();
+                if (isDebug && affOverride !== null) {
+                    data.affinity.level = affOverride;
+                    // 簡易的にランクも調整（必要なら）
+                    if (affOverride > 50) data.affinity.rank = '最愛のパートナー';
+                    else if (affOverride > 20) data.affinity.rank = '大切な存在';
+                }
+                setStats(data);
+            }
         } catch { }
     };
 

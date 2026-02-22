@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Image, Dimensions } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
 import { useTheme, DarkTheme } from '../theme';
+import { getCurrentHour } from '../utils/debugStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -8,12 +9,22 @@ export default function DynamicSplashScreen({ onFinish }: { onFinish: () => void
     const { theme = DarkTheme } = useTheme() || {};
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scaleAnim = useRef(new Animated.Value(0.9)).current;
+    const [greeting, setGreeting] = useState("おかえり、ぬるくん♡");
 
     useEffect(() => {
-        Animated.parallel([
-            Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-            Animated.spring(scaleAnim, { toValue: 1, friction: 5, useNativeDriver: true }),
-        ]).start();
+        const init = async () => {
+            const hour = await getCurrentHour();
+            if (hour >= 5 && hour < 11) setGreeting("おはよう、ぬるくん♡");
+            else if (hour >= 11 && hour < 17) setGreeting("こんにちは、ぬるくん♡");
+            else if (hour >= 17 && hour < 22) setGreeting("こんばんは、ぬるくん♡");
+            else setGreeting("まだ起きてたの、ぬるくん？♡");
+
+            Animated.parallel([
+                Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+                Animated.spring(scaleAnim, { toValue: 1, friction: 5, useNativeDriver: true }),
+            ]).start();
+        };
+        init();
 
         // 2.5秒後にフェードアウトして終了
         const timer = setTimeout(() => {
@@ -30,7 +41,7 @@ export default function DynamicSplashScreen({ onFinish }: { onFinish: () => void
             <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
                 <Text style={[styles.title, { color: theme.primary }]}>Luna Villa</Text>
                 <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                    おかえり、ぬるくん♡
+                    {greeting}
                 </Text>
             </Animated.View>
         </View>
