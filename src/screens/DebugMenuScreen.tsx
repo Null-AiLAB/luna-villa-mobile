@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     Switch,
     Dimensions,
+    Alert,
 } from 'react-native';
 import { useTheme, DarkTheme, Spacing, FontSize, BorderRadius } from '../theme';
 import { debugStore } from '../utils/debugStore';
@@ -25,12 +26,11 @@ export default function DebugMenuScreen({ navigation }: any) {
 
     const loadDebug = async () => {
         const enabled = await debugStore.getIsEnabled();
-        const mockTime = await debugStore.getUseMockTime();
-        const hour = await debugStore.getMockHour();
+        const hour = await debugStore.getVirtualHour();
         const aff = await debugStore.getAffinityOverride();
         setIsDebug(enabled);
-        setUseMockTime(mockTime);
-        setMockHour(hour);
+        setUseMockTime(hour !== null);
+        setMockHour(hour ?? 12);
         setAffOverride(aff);
     };
 
@@ -41,13 +41,19 @@ export default function DebugMenuScreen({ navigation }: any) {
 
     const toggleMock = async (val: boolean) => {
         setUseMockTime(val);
-        await debugStore.setUseMockTime(val);
+        if (val) {
+            await debugStore.setVirtualHour(mockHour);
+        } else {
+            await debugStore.setVirtualHour(null);
+        }
     };
 
     const changeHour = async (h: number) => {
         const newH = Math.max(0, Math.min(23, h));
         setMockHour(newH);
-        await debugStore.setMockHour(newH);
+        if (useMockTime) {
+            await debugStore.setVirtualHour(newH);
+        }
     };
 
     const changeAffinity = async (delta: number) => {

@@ -17,12 +17,15 @@ import { Spacing, FontSize, BorderRadius, useTheme, DarkTheme } from '../theme';
 import { api } from '../api';
 import { debugStore, getCurrentHour } from '../utils/debugStore';
 import { scheduleTestNotification } from '../utils/notifications';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 interface Props {
     onLogout: () => void;
 }
 
 export default function SettingsScreen({ onLogout }: Props) {
+    const navigation = useNavigation<any>();
     const { theme = DarkTheme, isDarkMode = true, toggleTheme } = useTheme() || {};
     const [notifEnabled, setNotifEnabled] = useState(true);
     const [serverUrl, setServerUrl] = useState(api.getServerUrl());
@@ -332,8 +335,44 @@ export default function SettingsScreen({ onLogout }: Props) {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    // ... (omitting unchanged styles)
-    logoutText: { fontSize: FontSize.md, fontWeight: '600' },
-    version: { textAlign: 'center', fontSize: FontSize.xs, marginTop: Spacing.xl },
-    debugEntry: { alignSelf: 'center', marginTop: 40, padding: 10, opacity: 0.3 },
+    header: { paddingTop: 60, paddingBottom: 15, paddingHorizontal: 20, borderBottomWidth: 1, alignItems: 'center' },
+    headerTitle: { fontSize: FontSize.xl, fontWeight: '800' },
+    scrollView: { flex: 1 },
+    scrollContent: { paddingHorizontal: 20, paddingBottom: 60 },
+    card: { padding: 20, borderRadius: BorderRadius.xl, borderWidth: 1, marginBottom: 20, elevation: 2 },
+    affinityCard: { alignItems: 'center', marginTop: 10 },
+    affinityLabel: { fontSize: FontSize.xs, fontWeight: '600' },
+    affinityValue: { fontSize: 32, fontWeight: '900', marginVertical: 8 },
+    affinityPointsRow: { flexDirection: 'row', alignItems: 'center' },
+    affinityPoints: { fontSize: FontSize.xs, fontWeight: '700' },
+    sectionTitle: { fontSize: FontSize.sm, fontWeight: '800', marginBottom: 12, marginTop: 10, marginLeft: 5 },
+    greetingText: { fontSize: FontSize.md, fontWeight: '500', textAlign: 'center', marginBottom: 20 },
+    avatarSection: { alignItems: 'center' },
+    avatarPreview: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },
+    avatarImage: { width: '100%', height: '100%' },
+    avatarPlaceholder: { fontSize: 40 },
+    avatarTip: { fontSize: FontSize.xs, marginTop: 15, textAlign: 'center' },
+    statsGrid: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 10 },
+    statItem: { alignItems: 'center' },
+    statNumber: { fontSize: FontSize.lg, fontWeight: '800' },
+    statLabel: { fontSize: 10, fontWeight: '600', marginTop: 4 },
+    settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15 },
+    settingLabel: { fontSize: FontSize.md, fontWeight: '600' },
+    settingValue: { fontSize: FontSize.xs, fontWeight: '500' },
+    reconnectButton: { marginTop: 15, padding: 12, borderRadius: BorderRadius.md, alignItems: 'center', backgroundColor: 'rgba(123, 104, 238, 0.1)' },
+    reconnectText: { fontSize: FontSize.sm, fontWeight: '700' },
+    statusRow: { flexDirection: 'row', alignItems: 'center' },
+    statusIndicator: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
+    statusText: { fontSize: FontSize.xs, fontWeight: '700' },
+    urlEditArea: { marginTop: 10 },
+    urlInput: { borderRadius: BorderRadius.md, padding: 12, borderWidth: 1, fontSize: FontSize.md },
+    urlButtons: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 15 },
+    urlCancel: { padding: 10, borderRadius: BorderRadius.md, minWidth: 80, alignItems: 'center' },
+    urlCancelText: { fontSize: FontSize.sm, fontWeight: '600' },
+    urlSave: { padding: 10, borderRadius: BorderRadius.md, minWidth: 80, alignItems: 'center' },
+    urlSaveText: { color: '#fff', fontSize: FontSize.sm, fontWeight: '700' },
+    logoutButton: { marginTop: 40, padding: 18, borderRadius: BorderRadius.xl, borderWidth: 2, alignItems: 'center' },
+    logoutText: { fontSize: FontSize.md, fontWeight: '800' },
+    version: { textAlign: 'center', fontSize: 10, marginTop: 40, opacity: 0.5 },
+    debugEntry: { alignSelf: 'center', marginTop: 40, padding: 15, opacity: 0.2 },
 });
