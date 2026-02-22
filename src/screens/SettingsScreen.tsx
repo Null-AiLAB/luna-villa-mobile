@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -10,11 +10,11 @@ import {
     TextInput,
     Image,
     ActivityIndicator,
+    Animated,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Spacing, FontSize, BorderRadius, useTheme, DarkTheme } from '../theme';
 import { api } from '../api';
-import AvatarCropModal from '../components/AvatarCropModal';
 import { scheduleTestNotification } from '../utils/notifications';
 
 interface Props {
@@ -27,12 +27,24 @@ export default function SettingsScreen({ onLogout }: Props) {
     const [serverUrl, setServerUrl] = useState(api.getServerUrl());
     const [editingUrl, setEditingUrl] = useState(false);
     const [tempUrl, setTempUrl] = useState('');
-    const [stats, setStats] = useState({ total_messages: 0, user_messages: 0, luna_messages: 0, affinity: 0 });
+    const [stats, setStats] = useState<any>({
+        total_messages: 0,
+        user_messages: 0,
+        luna_messages: 0,
+        affinity: { level: 1, exp: 0, rank: '知り合い', label: '親密度💖' }
+    });
     const [serverStatus, setServerStatus] = useState<'ok' | 'error' | 'checking'>('checking');
 
-    // 🖼️ るなのアバター
     const [avatarUri, setAvatarUri] = useState<string | null>(null);
-    const [showCropModal, setShowCropModal] = useState(false);
+    const avatarScale = useRef(new Animated.Value(1)).current;
+
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour >= 5 && hour < 11) return "おはよう、ぬるくん！今日も一日しっかり働きなさいよね♡";
+        if (hour >= 11 && hour < 17) return "お疲れ様。休憩も必要よ？私を眺めて癒やされてもいいんだから。";
+        if (hour >= 17 && hour < 22) return "こんばんは、ぬるくん。夕食はもう済ませた？";
+        return "まだ起きてるの？夜更かしは私の魂に響くんだから、ほどほどにね。";
+    };
 
     useEffect(() => {
         loadSettings();
@@ -145,24 +157,39 @@ export default function SettingsScreen({ onLogout }: Props) {
                 {/* ─── るなのアイコン ─── */}
                 <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>🖼️ るなのカスタム</Text>
                 <View style={[styles.card, { backgroundColor: theme.surfaceLight, borderColor: theme.border }]}>
+                    <Text style={[styles.greetingText, { color: theme.textSecondary }]}>{getGreeting()}</Text>
                     <View style={styles.avatarSection}>
-                        <View style={[styles.avatarPreview, { backgroundColor: theme.surface, borderColor: theme.primary }]}>
-                            {avatarUri ? (
-                                <Image
-                                    source={{ uri: avatarUri }}
-                                    style={styles.avatarImage}
-                                />
-                            ) : (
-                                <Text style={styles.avatarPlaceholder}>👤</Text>
-                            )}
-                        </View>
                         <TouchableOpacity
-                            style={[styles.avatarChangeButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
-                            onPress={() => setShowCropModal(true)}
-                            activeOpacity={0.7}
+                            onPress={() => {
+                                // アバター反応（振動なし）
+                                Animated.sequence([
+                                    Animated.timing(avatarScale, { toValue: 1.2, duration: 100, useNativeDriver: true }),
+                                    Animated.spring(avatarScale, { toValue: 1, friction: 3, useNativeDriver: true }),
+                                ]).start();
+                            }}
+                            activeOpacity={0.9}
                         >
-                            <Text style={[styles.avatarChangeText, { color: theme.primary }]}>📷 アイコンを変更</Text>
+                            <Animated.View style={[
+                                styles.avatarPreview,
+                                {
+                                    backgroundColor: theme.surface,
+                                    borderColor: theme.primary,
+                                    transform: [{ scale: avatarScale }]
+                                }
+                            ]}>
+                                {avatarUri ? (
+                                    <Image
+                                        source={{ uri: avatarUri }}
+                                        style={styles.avatarImage}
+                                    />
+                                ) : (
+                                    <Text style={styles.avatarPlaceholder}>👤</Text>
+                                )}
+                            </Animated.View>
                         </TouchableOpacity>
+                        <Text style={[styles.avatarTip, { color: theme.textMuted }]}>
+                            アイコンの変更は、今は私の気分転換中よ♡
+                        </Text>
                     </View>
                 </View>
 
@@ -270,15 +297,9 @@ export default function SettingsScreen({ onLogout }: Props) {
                 </TouchableOpacity>
 
                 <Text style={[styles.version, { color: theme.textMuted }]}>
-                    Luna Villa v1.1.8 — 🌙 るなの別荘♡
+                    Luna Villa v1.2.0 — 🌙 るなの別荘♡
                 </Text>
             </ScrollView>
-
-            <AvatarCropModal
-                visible={showCropModal}
-                onClose={() => setShowCropModal(false)}
-                onSave={handleAvatarSave}
-            />
         </View>
     );
 }
@@ -289,6 +310,14 @@ const styles = StyleSheet.create({
     headerTitle: { fontSize: FontSize.xl, fontWeight: '700' },
     scrollView: { flex: 1 },
     scrollContent: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
+    greetingText: {
+        fontSize: FontSize.sm,
+        textAlign: 'center',
+        fontStyle: 'italic',
+        lineHeight: 20,
+        marginBottom: Spacing.md,
+        paddingHorizontal: Spacing.md,
+    },
     affinityCard: { alignItems: 'center', paddingVertical: Spacing.lg, marginBottom: Spacing.md, borderWidth: 2 },
     affinityLabel: { fontSize: FontSize.sm, fontWeight: '600', marginBottom: 4 },
     affinityValue: { fontSize: FontSize.xxl, fontWeight: '800', marginBottom: 8 },
@@ -302,6 +331,7 @@ const styles = StyleSheet.create({
     avatarPlaceholder: { fontSize: 36 },
     avatarChangeButton: { borderRadius: BorderRadius.md, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.lg, borderWidth: 1 },
     avatarChangeText: { fontSize: FontSize.sm, fontWeight: '600' },
+    avatarTip: { fontSize: 10, marginTop: Spacing.sm, fontStyle: 'italic' },
     settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.sm },
     settingLabel: { fontSize: FontSize.md },
     settingValue: { fontSize: FontSize.sm, maxWidth: '60%', textAlign: 'right' },

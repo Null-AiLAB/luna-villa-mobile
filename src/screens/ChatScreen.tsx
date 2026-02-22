@@ -14,8 +14,9 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { readAsStringAsync, EncodingType } from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Spacing, FontSize, BorderRadius, useTheme, DarkTheme } from '../theme';
 import { api } from '../api';
 
@@ -31,12 +32,39 @@ export default function ChatScreen() {
     const { theme = DarkTheme, isDarkMode = true } = useTheme() || {};
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
-    const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [isStreaming, setIsStreaming] = useState(false);
     const [avatarUri, setAvatarUri] = useState<string | null>(null);
     const flatListRef = useRef<FlatList>(null);
     const streamingRef = useRef('');
-    const blinkAnim = useRef(new Animated.Value(1)).current;
+
+    // 思考アニメーション用 (Hopping Dots)
+    const dotAnims = [
+        useRef(new Animated.Value(0)).current,
+        useRef(new Animated.Value(0)).current,
+        useRef(new Animated.Value(0)).current,
+    ];
+    const auraScale = useRef(new Animated.Value(1)).current;
+
+    const startThinkingAnimation = useCallback(() => {
+        const createDotAnim = (anim: Animated.Value, delay: number) => {
+            return Animated.loop(
+                Animated.sequence([
+                    Animated.delay(delay),
+                    Animated.timing(anim, { toValue: -6, duration: 250, useNativeDriver: true }),
+                    Animated.timing(anim, { toValue: 0, duration: 250, useNativeDriver: true }),
+                    Animated.delay(500 - delay),
+                ])
+            );
+        };
+        Animated.parallel(dotAnims.map((anim, i) => createDotAnim(anim, i * 150))).start();
+    }, [dotAnims]);
+
+    const stopThinkingAnimation = useCallback(() => {
+        dotAnims.forEach(anim => {
+            anim.stopAnimation();
+            anim.setValue(0);
+        });
+    }, [dotAnims]);
 
     // 履歴読み込み
     useEffect(() => {
@@ -71,45 +99,19 @@ export default function ChatScreen() {
         }, 100);
     };
 
-    const pickImage = async () => {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsMultipleSelection: false,
-            quality: 0.8,
-            base64: true,
-        });
-
-        if (!result.canceled && result.assets[0]) {
-            setSelectedImage(result.assets[0].uri);
-        }
-    };
-
     const sendMessage = async () => {
         const text = input.trim();
-        if ((!text && !selectedImage) || isStreaming) return;
-
-        let imageData: string[] = [];
-        if (selectedImage) {
-            try {
-                const base64 = await readAsStringAsync(selectedImage, {
-                    encoding: EncodingType.Base64,
-                });
-                imageData = [base64];
-            } catch (e) {
-                console.error('Image read error:', e);
-            }
-        }
+        if (!text || isStreaming) return;
 
         const userMsg: Message = {
             id: `user-${Date.now()}`,
             role: 'user',
-            content: text || '📷 画像を送信しました',
+            content: text,
             timestamp: new Date().toISOString(),
         };
 
         setMessages(prev => [...prev, userMsg]);
         setInput('');
-        setSelectedImage(null);
         setIsStreaming(true);
         scrollToBottom();
 
@@ -123,9 +125,12 @@ export default function ChatScreen() {
         setMessages(prev => [...prev, lunaMsg]);
         streamingRef.current = '';
 
+        // 思考アニメーション開始
+        startThinkingAnimation();
+
         await api.chat(
-            text || 'この画像について教えて',
-            imageData,
+            text,
+            [],
             (chunk: string) => {
                 streamingRef.current += chunk;
                 const currentContent = streamingRef.current;
@@ -138,10 +143,12 @@ export default function ChatScreen() {
             },
             () => {
                 setIsStreaming(false);
+                stopThinkingAnimation();
                 scrollToBottom();
             },
             (err: string) => {
                 setIsStreaming(false);
+                stopThinkingAnimation();
                 setMessages(prev =>
                     prev.map(m =>
                         m.id === lunaId
@@ -196,12 +203,29 @@ export default function ChatScreen() {
                         isUser ? { backgroundColor: theme.bubbleUser || '#7B68EE', borderBottomRightRadius: 4 }
                             : { backgroundColor: theme.bubbleLuna || '#252240', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: theme.border || 'rgba(123, 104, 238, 0.2)' },
                     ]}>
-                        <Text style={[
-                            styles.bubbleText,
-                            isUser ? { color: theme.bubbleUserText || '#FFFFFF' } : { color: theme.bubbleLunaText || '#F0ECF9' },
-                        ]}>
-                            {item.content || (isStreaming ? '...' : '')}
-                        </Text>
+                        {(!item.content && !isUser && isStreaming) ? (
+                            <View style={styles.dotContainer}>
+                                {dotAnims.map((anim, i) => (
+                                    <Animated.View
+                                        key={i}
+                                        style={[
+                                            styles.dot,
+                                            {
+                                                backgroundColor: theme.bubbleLunaText || '#F0ECF9',
+                                                transform: [{ translateY: anim }]
+                                            }
+                                        ]}
+                                    />
+                                ))}
+                            </View>
+                        ) : (
+                            <Text style={[
+                                styles.bubbleText,
+                                isUser ? { color: theme.bubbleUserText || '#FFFFFF' } : { color: theme.bubbleLunaText || '#F0ECF9' },
+                            ]}>
+                                {item.content}
+                            </Text>
+                        )}
                     </View>
 
                     <View style={[styles.metaRow, isUser && styles.metaRowUser]}>
@@ -250,25 +274,27 @@ export default function ChatScreen() {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
                 <View style={[styles.inputWrapper, { backgroundColor: theme.surface, borderTopColor: theme.border }]}>
-                    {selectedImage && (
-                        <View style={styles.previewContainer}>
-                            <Image source={{ uri: selectedImage }} style={[styles.previewImage, { borderColor: theme.border }]} />
-                            <TouchableOpacity
-                                style={[styles.previewClose, { backgroundColor: theme.error }]}
-                                onPress={() => setSelectedImage(null)}
-                            >
-                                <Text style={styles.previewCloseText}>✕</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-
                     <View style={styles.inputArea}>
                         <TouchableOpacity
-                            style={styles.imageButton}
-                            onPress={pickImage}
-                            activeOpacity={0.6}
+                            activeOpacity={0.8}
+                            onPress={() => {
+                                api.haptics('heartbeat');
+                                Animated.sequence([
+                                    Animated.timing(auraScale, { toValue: 1.3, duration: 100, useNativeDriver: true }),
+                                    Animated.spring(auraScale, { toValue: 1, friction: 3, useNativeDriver: true }),
+                                ]).start();
+                            }}
                         >
-                            <Text style={styles.imageButtonText}>📎</Text>
+                            <Animated.View style={[styles.auraContainer, { transform: [{ scale: auraScale }] }]}>
+                                <LinearGradient
+                                    colors={['#7B68EE', '#9370DB', '#4B0082']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.aura}
+                                >
+                                    <Text style={styles.auraIcon}>🌙</Text>
+                                </LinearGradient>
+                            </Animated.View>
                         </TouchableOpacity>
 
                         <TextInput
@@ -286,15 +312,15 @@ export default function ChatScreen() {
                         <TouchableOpacity
                             style={[
                                 styles.sendButton,
-                                ((!input.trim() && !selectedImage) || isStreaming)
+                                (!input.trim() || isStreaming)
                                     ? { backgroundColor: theme.surfaceLight }
                                     : { backgroundColor: theme.primary }
                             ]}
                             onPress={sendMessage}
-                            disabled={(!input.trim() && !selectedImage) || isStreaming}
+                            disabled={!input.trim() || isStreaming}
                             activeOpacity={0.7}
                         >
-                            <Text style={styles.sendButtonText}>✈️</Text>
+                            <Text style={styles.sendButtonText}>➤</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -360,6 +386,17 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
+    },
+    dotContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        gap: 4,
+    },
+    dot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
     },
     messageContent: {
         maxWidth: '75%',
@@ -437,13 +474,28 @@ const styles = StyleSheet.create({
         paddingHorizontal: Spacing.md,
         paddingVertical: Spacing.sm,
     },
-    imageButton: {
-        padding: Spacing.sm,
-        marginRight: Spacing.xs,
-        marginBottom: 2,
+    auraIcon: {
+        fontSize: 12,
+        alignSelf: 'center',
+        marginTop: 4,
     },
-    imageButtonText: {
-        fontSize: 22,
+    auraContainer: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginRight: Spacing.sm,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        elevation: 4,
+        shadowColor: '#7B68EE',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 4,
+    },
+    aura: {
+        flex: 1,
     },
     input: {
         flex: 1,

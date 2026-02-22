@@ -4,6 +4,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 
 export type LoginResult = 'success' | 'wrong_password' | 'network_error';
 
@@ -31,6 +32,23 @@ class ApiClient {
 
     isAuthenticated(): boolean {
         return !!this.token;
+    }
+
+    // ─── 演出 (Haptics) ──────────
+    haptics(style: 'light' | 'medium' | 'heavy' | 'selection' | 'heartbeat' = 'light') {
+        try {
+            if (style === 'heartbeat') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 150);
+            } else if (style === 'selection') {
+                Haptics.selectionAsync();
+            } else {
+                const s = style === 'heavy' ? Haptics.ImpactFeedbackStyle.Heavy :
+                    style === 'medium' ? Haptics.ImpactFeedbackStyle.Medium :
+                        Haptics.ImpactFeedbackStyle.Light;
+                Haptics.impactAsync(s);
+            }
+        } catch { }
     }
 
     // ─── 認証 ──────────────────

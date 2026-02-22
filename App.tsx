@@ -13,6 +13,7 @@ import { api } from './src/api';
 import { ThemeProvider, useTheme, DarkTheme } from './src/theme';
 import { initLogger } from './src/utils/logger';
 import { GlobalErrorBoundary } from './src/components/GlobalErrorBoundary';
+import DynamicSplashScreen from './src/components/DynamicSplashScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
@@ -39,6 +40,7 @@ function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showDynamicSplash, setShowDynamicSplash] = useState(true);
   const { theme = DarkTheme, isDarkMode = true } = useTheme() || {};
 
   useEffect(() => {
@@ -51,6 +53,10 @@ function AppContent() {
     setLoading(false);
   };
 
+  const handleSplashFinish = () => {
+    setShowDynamicSplash(false);
+  };
+
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.background || '#0D0B1A' }]}>
@@ -59,6 +65,10 @@ function AppContent() {
         <StatusBar style={isDarkMode ? "light" : "dark"} />
       </View>
     );
+  }
+
+  if (showDynamicSplash) {
+    return <DynamicSplashScreen onFinish={handleSplashFinish} />;
   }
 
   if (!isLoggedIn) {
@@ -72,10 +82,27 @@ function AppContent() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <NavigationContainer>
+      <NavigationContainer theme={{
+        dark: true,
+        colors: {
+          primary: theme.primary || '#7B68EE',
+          background: theme.background || '#0D0B1A',
+          card: theme.surface || '#1A1730',
+          text: theme.text || '#FFFFFF',
+          border: theme.border || 'rgba(123, 104, 238, 0.2)',
+          notification: theme.accent || '#FF69B4',
+        },
+        fonts: {
+          regular: { fontFamily: 'System', fontWeight: '400' },
+          medium: { fontFamily: 'System', fontWeight: '500' },
+          bold: { fontFamily: 'System', fontWeight: '700' },
+          heavy: { fontFamily: 'System', fontWeight: '900' },
+        }
+      }}>
         <Tab.Navigator
           screenOptions={{
             headerShown: false,
+            animation: 'shift',
             tabBarStyle: {
               backgroundColor: theme.surface || '#1A1730',
               borderTopColor: theme.border || 'rgba(123, 104, 238, 0.2)',
@@ -153,13 +180,15 @@ function AppContent() {
 export default function App() {
   useEffect(() => {
     initLogger();
-    console.log("🌙 Luna Villa v1.1.4 Rescue Mode Active! ♡");
+    console.log("🌙 Luna Villa v1.2.0 Heartbeat Edition - Activation Success! ♡");
   }, []);
 
   return (
     <GlobalErrorBoundary>
       <ThemeProvider>
-        <AppContent />
+        <ThemeProvider>
+          <AppContent />
+        </ThemeProvider>
       </ThemeProvider>
     </GlobalErrorBoundary>
   );

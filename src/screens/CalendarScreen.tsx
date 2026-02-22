@@ -6,11 +6,13 @@ import {
     StyleSheet,
     Modal,
     TextInput,
+    Platform,
     Alert,
     ScrollView,
     ActivityIndicator,
 } from 'react-native';
 import { Calendar, DateData, LocaleConfig } from 'react-native-calendars';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Spacing, FontSize, BorderRadius, useTheme, DarkTheme } from '../theme';
 import { api } from '../api';
 import { scheduleReminder } from '../utils/notifications';
@@ -47,9 +49,12 @@ export default function CalendarScreen() {
 
     const [inputTitle, setInputTitle] = useState('');
     const [inputDesc, setInputDesc] = useState('');
-    const [inputTime, setInputTime] = useState('12:00');
+    const [inputTime, setInputTime] = useState(new Date());
+    const [inputEndTime, setInputEndTime] = useState(new Date());
+    const [activePicker, setActivePicker] = useState<'start' | 'end' | null>(null);
     const [loading, setLoading] = useState(false);
 
+    const [showDatePicker, setShowDatePicker] = useState(false);
     const today = new Date().toISOString().split('T')[0];
 
     useEffect(() => {
@@ -103,24 +108,27 @@ export default function CalendarScreen() {
 
         setLoading(true);
         try {
-            const startAt = `${selectedDate}T${inputTime}:00`;
+            const timeStr = `${inputTime.getHours().toString().padStart(2, '0')}:${inputTime.getMinutes().toString().padStart(2, '0')}`;
+            const endTimeStr = `${inputEndTime.getHours().toString().padStart(2, '0')}:${inputEndTime.getMinutes().toString().padStart(2, '0')}`;
+            const startAt = `${selectedDate}T${timeStr}:00`;
+            const endAt = `${selectedDate}T${endTimeStr}:00`;
 
             if (editMode === 'create') {
                 const res = await api.createEvent({
                     title: inputTitle.trim(),
                     description: inputDesc.trim(),
                     start_at: startAt,
+                    end_at: endAt,
                     added_by: 'user',
                 });
-                // リマインダー設定 (30分前と10分前)
                 await scheduleReminder(res.id, inputTitle.trim(), startAt, [30, 10]);
             } else if (currentEventId) {
                 await api.updateEvent(currentEventId, {
                     title: inputTitle.trim(),
                     description: inputDesc.trim(),
                     start_at: startAt,
+                    end_at: endAt,
                 });
-                // リマインダー再設定
                 await scheduleReminder(currentEventId, inputTitle.trim(), startAt, [30, 10]);
             }
 
@@ -160,8 +168,14 @@ export default function CalendarScreen() {
         setCurrentEventId(evt.id);
         setInputTitle(evt.title);
         setInputDesc(evt.description);
-        const timePart = evt.start_at.split('T')[1]?.substring(0, 5) || '12:00';
-        setInputTime(timePart);
+        const timeDate = new Date(evt.start_at);
+        setInputTime(isNaN(timeDate.getTime()) ? new Date() : timeDate);
+        if (evt.end_at) {
+            const endD = new Date(evt.end_at);
+            setInputEndTime(isNaN(endD.getTime()) ? new Date() : endD);
+        } else {
+            setInputEndTime(new Date());
+        }
         setShowModal(true);
     };
 
@@ -169,7 +183,12 @@ export default function CalendarScreen() {
         setEditMode('create');
         setInputTitle('');
         setInputDesc('');
-        setInputTime('12:00');
+        const defaultTime = new Date();
+        defaultTime.setHours(12, 0, 0, 0);
+        setInputTime(defaultTime);
+        const defaultEndTime = new Date();
+        defaultEndTime.setHours(13, 0, 0, 0);
+        setInputEndTime(defaultEndTime);
         setShowModal(true);
     };
 
@@ -204,6 +223,21 @@ export default function CalendarScreen() {
                         onMonthChange={(month: DateData) => {
                             api.getEvents(month.year, month.month).then(setEvents);
                         }}
+                        renderHeader={(date: any) => {
+                            const d = new Date(date);
+                            const year = d.getFullYear();
+                            const month = d.getMonth() + 1;
+                            return (
+                                <TouchableOpacity
+                                    style={styles.magazineHeader}
+                                    onPress={() => setShowDatePicker(true)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[styles.magazineYear, { color: theme.textMuted }]}>{year}</Text>
+                                    <Text style={[styles.magazineMonth, { color: theme.primary }]}>{month} <Text style={styles.magazineMonthSub}>MONTH</Text></Text>
+                                </TouchableOpacity>
+                            );
+                        }}
                         theme={{
                             calendarBackground: theme.surface,
                             textSectionTitleColor: theme.textSecondary,
@@ -212,7 +246,7 @@ export default function CalendarScreen() {
                             todayTextColor: theme.primary,
                             dayTextColor: theme.text,
                             textDisabledColor: theme.textMuted,
-                            monthTextColor: theme.text,
+                            monthTextColor: 'transparent', // 標準の月表示を消す
                             arrowColor: theme.primary,
                             textDayFontSize: 14,
                             textMonthFontSize: 16,
@@ -243,6 +277,11 @@ export default function CalendarScreen() {
                                 <View style={styles.eventRow}>
                                     <View style={styles.timeCluster}>
                                         <Text style={[styles.eventTime, { color: theme.primary }]}>{formatTime(evt.start_at)}</Text>
+                                        {evt.end_at && (
+                                            <Text style={[styles.eventTimeEnd, { color: theme.textMuted }]}>
+                                                〜{formatTime(evt.end_at)}
+                                            </Text>
+                                        )}
                                     </View>
                                     <View style={styles.eventInfo}>
                                         <Text style={[styles.eventTitle, { color: theme.text }]}>
@@ -262,6 +301,21 @@ export default function CalendarScreen() {
                         ))
                     )}
                 </View>
+                {showDatePicker && (
+                    <DateTimePicker
+                        value={new Date(selectedDate)}
+                        mode="date"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={(event: any, date?: Date) => {
+                            setShowDatePicker(false);
+                            if (date) {
+                                const ds = date.toISOString().split('T')[0];
+                                setSelectedDate(ds);
+                                api.getEvents(date.getFullYear(), date.getMonth() + 1).then(setEvents);
+                            }
+                        }}
+                    />
+                )}
             </ScrollView>
 
             <Modal visible={showModal} animationType="slide" transparent>
@@ -288,18 +342,51 @@ export default function CalendarScreen() {
                         />
 
                         <View style={styles.timeInputRow}>
-                            <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>開始時刻:</Text>
-                            <TextInput
-                                style={[styles.timeInput, { backgroundColor: theme.surfaceLight, color: theme.text, borderColor: theme.border }]}
-                                placeholder="12:00"
-                                placeholderTextColor={theme.textMuted}
-                                value={inputTime}
-                                onChangeText={setInputTime}
-                                keyboardType="numbers-and-punctuation"
-                                maxLength={5}
-                                editable={!loading}
-                            />
+                            <View style={styles.timeInputBlock}>
+                                <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>開始:</Text>
+                                <TouchableOpacity
+                                    style={[styles.timePickerButton, { backgroundColor: theme.surfaceLight, borderColor: theme.border }]}
+                                    onPress={() => setActivePicker('start')}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[styles.timePickerText, { color: theme.text }]}>
+                                        {inputTime.getHours().toString().padStart(2, '0')}:{inputTime.getMinutes().toString().padStart(2, '0')}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <Text style={[styles.timeSeparator, { color: theme.textMuted }]}>〜</Text>
+
+                            <View style={styles.timeInputBlock}>
+                                <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>終了:</Text>
+                                <TouchableOpacity
+                                    style={[styles.timePickerButton, { backgroundColor: theme.surfaceLight, borderColor: theme.border }]}
+                                    onPress={() => setActivePicker('end')}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[styles.timePickerText, { color: theme.text }]}>
+                                        {inputEndTime.getHours().toString().padStart(2, '0')}:{inputEndTime.getMinutes().toString().padStart(2, '0')}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
+
+                        {activePicker && (
+                            <DateTimePicker
+                                value={activePicker === 'start' ? inputTime : inputEndTime}
+                                mode="time"
+                                is24Hour={true}
+                                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                onChange={(event: any, selectedDate?: Date) => {
+                                    const mode = activePicker;
+                                    setActivePicker(null);
+                                    if (selectedDate) {
+                                        if (mode === 'start') setInputTime(selectedDate);
+                                        else setInputEndTime(selectedDate);
+                                    }
+                                }}
+                            />
+                        )}
 
                         <TextInput
                             style={[styles.modalInput, styles.modalInputMulti, { backgroundColor: theme.surfaceLight, color: theme.text, borderColor: theme.border }]}
@@ -349,6 +436,27 @@ const styles = StyleSheet.create({
     addButtonText: { color: '#fff', fontSize: 20, fontWeight: '700' },
     scrollView: { flex: 1 },
     calendar: { paddingBottom: 10 },
+    magazineHeader: {
+        alignItems: 'center',
+        paddingVertical: 10,
+    },
+    magazineYear: {
+        fontSize: 12,
+        fontWeight: '300',
+        letterSpacing: 4,
+        marginBottom: -2,
+    },
+    magazineMonth: {
+        fontSize: 32,
+        fontWeight: '900',
+        fontStyle: 'italic',
+    },
+    magazineMonthSub: {
+        fontSize: 10,
+        fontWeight: '300',
+        fontStyle: 'normal',
+        letterSpacing: 1,
+    },
     eventsSection: { padding: Spacing.lg },
     eventsSectionTitle: { fontSize: FontSize.lg, fontWeight: '700', marginBottom: Spacing.md },
     emptyState: { paddingVertical: Spacing.xl, alignItems: 'center' },
@@ -356,7 +464,8 @@ const styles = StyleSheet.create({
     eventCard: { borderRadius: BorderRadius.md, padding: Spacing.md, marginBottom: Spacing.sm, borderLeftWidth: 3 },
     eventRow: { flexDirection: 'row', alignItems: 'flex-start' },
     timeCluster: { width: 55 },
-    eventTime: { fontSize: FontSize.md, fontWeight: '700', marginTop: 2 },
+    eventTime: { fontSize: FontSize.md, fontWeight: '700' },
+    eventTimeEnd: { fontSize: 10, fontWeight: '600', marginTop: -2 },
     eventInfo: { flex: 1 },
     eventTitle: { fontSize: FontSize.md, fontWeight: '600' },
     eventDesc: { fontSize: FontSize.sm, marginTop: 2 },
@@ -368,9 +477,12 @@ const styles = StyleSheet.create({
     closeText: { fontSize: FontSize.md },
     modalDate: { fontSize: FontSize.md, marginBottom: Spacing.lg },
     modalInput: { borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: FontSize.md, borderWidth: 1, marginBottom: Spacing.md },
-    timeInputRow: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.md, gap: Spacing.md },
-    timeLabel: { fontSize: FontSize.md },
-    timeInput: { borderRadius: BorderRadius.md, padding: Spacing.sm, fontSize: FontSize.md, borderWidth: 1, width: 80, textAlign: 'center' },
+    timeInputRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
+    timeInputBlock: { alignItems: 'flex-start', flex: 1 },
+    timeLabel: { fontSize: FontSize.sm, marginBottom: 4 },
+    timeSeparator: { fontSize: FontSize.lg, marginHorizontal: Spacing.sm, marginTop: 20 },
+    timePickerButton: { borderRadius: BorderRadius.md, padding: Spacing.sm, borderWidth: 1, width: '100%', alignItems: 'center' },
+    timePickerText: { fontSize: FontSize.md, fontWeight: '600' },
     modalInputMulti: { height: 80, textAlignVertical: 'top' },
     modalFooter: { marginTop: Spacing.md },
     modalSubmit: { padding: Spacing.md, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center' },
