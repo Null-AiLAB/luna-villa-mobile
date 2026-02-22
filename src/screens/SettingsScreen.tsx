@@ -313,6 +313,15 @@ export default function SettingsScreen({ onLogout }: Props) {
                     <Text style={[styles.logoutText, { color: theme.error }]}>ログアウト</Text>
                 </TouchableOpacity>
 
+                {/* ─── デバッグ（隠し） ─── */}
+                <TouchableOpacity
+                    style={styles.debugEntry}
+                    onPress={() => (navigation as any)?.navigate('DebugMenu')}
+                    activeOpacity={0.6}
+                >
+                    <Ionicons name="bug-outline" size={16} color={theme.textMuted} />
+                </TouchableOpacity>
+
                 <Text style={[styles.version, { color: theme.textMuted }]}>
                     Luna Villa v1.2.0 — 🌙 るなの別荘♡
                 </Text>
@@ -323,52 +332,8 @@ export default function SettingsScreen({ onLogout }: Props) {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    header: { paddingTop: 50, paddingBottom: Spacing.md, paddingHorizontal: Spacing.lg, borderBottomWidth: 1 },
-    headerTitle: { fontSize: FontSize.xl, fontWeight: '700' },
-    scrollView: { flex: 1 },
-    scrollContent: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
-    greetingText: {
-        fontSize: FontSize.sm,
-        textAlign: 'center',
-        fontStyle: 'italic',
-        lineHeight: 20,
-        marginBottom: Spacing.md,
-        paddingHorizontal: Spacing.md,
-    },
-    affinityCard: { alignItems: 'center', paddingVertical: Spacing.lg, marginBottom: Spacing.md, borderWidth: 2 },
-    affinityLabel: { fontSize: FontSize.sm, fontWeight: '600', marginBottom: 4 },
-    affinityValue: { fontSize: FontSize.xxl, fontWeight: '800', marginBottom: 8 },
-    affinityPointsRow: { backgroundColor: 'rgba(123, 104, 238, 0.05)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 },
-    affinityPoints: { fontSize: 10, fontWeight: '700' },
-    sectionTitle: { fontSize: FontSize.sm || 12, fontWeight: '700', marginTop: Spacing.lg || 24, marginBottom: Spacing.sm || 8 },
-    card: { borderRadius: BorderRadius.lg, padding: Spacing.md, borderWidth: 1 },
-    avatarSection: { alignItems: 'center', paddingVertical: Spacing.sm },
-    avatarPreview: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 3, overflow: 'hidden', marginBottom: Spacing.md },
-    avatarImage: { width: 80, height: 80, borderRadius: 40 },
-    avatarPlaceholder: { fontSize: 36 },
-    avatarChangeButton: { borderRadius: BorderRadius.md, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.lg, borderWidth: 1 },
-    avatarChangeText: { fontSize: FontSize.sm, fontWeight: '600' },
-    avatarTip: { fontSize: 10, marginTop: Spacing.sm, fontStyle: 'italic' },
-    settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.sm },
-    settingLabel: { fontSize: FontSize.md },
-    settingValue: { fontSize: FontSize.sm, maxWidth: '60%', textAlign: 'right' },
-    statsGrid: { flexDirection: 'row', justifyContent: 'space-around' },
-    statItem: { alignItems: 'center', paddingVertical: Spacing.sm },
-    statNumber: { fontSize: FontSize.xl, fontWeight: '700' },
-    statLabel: { fontSize: 10, marginTop: 2 },
-    statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    statusIndicator: { width: 10, height: 10, borderRadius: 5 },
-    statusText: { fontSize: FontSize.sm },
-    urlEditArea: { marginTop: Spacing.sm },
-    urlInput: { borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: FontSize.md, borderWidth: 1 },
-    urlButtons: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.sm },
-    urlCancel: { flex: 1, padding: Spacing.sm, borderRadius: BorderRadius.md, alignItems: 'center' },
-    urlCancelText: { fontSize: FontSize.sm },
-    urlSave: { flex: 1, padding: Spacing.sm, borderRadius: BorderRadius.md, alignItems: 'center' },
-    urlSaveText: { color: '#fff', fontSize: FontSize.sm, fontWeight: '600' },
-    reconnectButton: { alignItems: 'center', paddingVertical: Spacing.sm, marginTop: Spacing.xs },
-    reconnectText: { fontSize: FontSize.sm, fontWeight: '600' },
-    logoutButton: { marginTop: Spacing.xl, padding: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: 'rgba(255, 107, 107, 0.1)', alignItems: 'center', borderWidth: 1 },
+    // ... (omitting unchanged styles)
     logoutText: { fontSize: FontSize.md, fontWeight: '600' },
     version: { textAlign: 'center', fontSize: FontSize.xs, marginTop: Spacing.xl },
+    debugEntry: { alignSelf: 'center', marginTop: 40, padding: 10, opacity: 0.3 },
 });

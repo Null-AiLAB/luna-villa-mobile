@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
@@ -10,11 +10,13 @@ import {
     ActivityIndicator,
     Modal,
     ScrollView,
+    SectionList,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Spacing, FontSize, BorderRadius, useTheme, DarkTheme } from '../theme';
 import { api } from '../api';
 import { scheduleReminder } from '../utils/notifications';
+import { Ionicons } from '@expo/vector-icons';
 
 interface Task {
     id: number;
@@ -24,14 +26,17 @@ interface Task {
     due_time: string | null;
     is_done: boolean;
     created_at: string;
+    completed_at: string | null;
     event_title: string | null;
 }
 
 export default function TaskScreen() {
     const { theme = DarkTheme } = useTheme() || {};
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [history, setHistory] = useState<any[]>([]);
-    const [viewMode, setViewMode] = useState<'active' | 'history'>('active');
+    const [history, setHistory] = useState<Task[]>([]);
+    const [activeTab, setActiveTab] = useState<'pending' | 'today_done' | 'history'>('pending');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [loading, setLoading] = useState(false);
 
     // 編集・作成
     const [modalVisible, setModalVisible] = useState(false);
@@ -39,37 +44,25 @@ export default function TaskScreen() {
     const [currentTaskId, setCurrentTaskId] = useState<number | null>(null);
     const [inputTitle, setInputTitle] = useState('');
     const [inputTime, setInputTime] = useState('');
-    const [loading, setLoading] = useState(false);
 
-    const today = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toISOString().split('T')[0];
 
     useFocusEffect(
         useCallback(() => {
-            if (viewMode === 'active') {
-                loadTasks();
-            } else {
-                loadHistory();
-            }
-        }, [viewMode])
+            loadData();
+        }, [activeTab])
     );
 
-    const loadTasks = async () => {
+    const loadData = async () => {
         setLoading(true);
         try {
-            const data = await api.getTasks(undefined, false);
-            setTasks(data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const loadHistory = async () => {
-        setLoading(true);
-        try {
-            const data = await api.getTaskHistory();
-            setHistory(data);
+            if (activeTab === 'history') {
+                const data = await api.getTaskHistory();
+                setHistory(data);
+            } else {
+                const data = await api.getTasks(undefined, false);
+                setTasks(data);
+            }
         } catch (err) {
             console.error(err);
         } finally {
@@ -79,30 +72,25 @@ export default function TaskScreen() {
 
     const handleSaveTask = async () => {
         if (!inputTitle.trim() || loading) return;
-
         setLoading(true);
         try {
             if (editMode === 'create') {
                 const res = await api.createTask({
                     title: inputTitle.trim(),
-                    due_date: today,
+                    due_date: todayStr,
                     due_time: inputTime.trim() || null,
                 });
                 if (inputTime.trim()) {
-                    await scheduleReminder(res.id, inputTitle.trim(), `${today}T${inputTime}:00`, [60]);
+                    await scheduleReminder(res.id, inputTitle.trim(), `${todayStr}T${inputTime}:00`, [60]);
                 }
             } else if (currentTaskId) {
                 await api.updateTask(currentTaskId, {
                     title: inputTitle.trim(),
                     due_time: inputTime.trim() || null,
                 });
-                if (inputTime.trim()) {
-                    await scheduleReminder(currentTaskId, inputTitle.trim(), `${today}T${inputTime}:00`, [60]);
-                }
             }
-
             setModalVisible(false);
-            loadTasks();
+            loadData();
         } catch {
             Alert.alert('エラー', 'タスクの保存に失敗したわ…');
         } finally {
@@ -112,8 +100,9 @@ export default function TaskScreen() {
 
     const handleToggle = async (task: Task) => {
         try {
-            await api.updateTask(task.id, { is_done: !task.is_done });
-            loadTasks();
+            const nextDone = !task.is_done;
+            await api.updateTask(task.id, { is_done: nextDone });
+            loadData();
         } catch {
             Alert.alert('エラー', '更新できなかったわ…');
         }
@@ -127,179 +116,147 @@ export default function TaskScreen() {
                 style: 'destructive',
                 onPress: async () => {
                     await api.deleteTask(id);
-                    if (viewMode === 'active') loadTasks(); else loadHistory();
+                    loadData();
                 }
             }
         ]);
     };
 
-    const openEdit = (task: Task) => {
-        setEditMode('edit');
-        setCurrentTaskId(task.id);
-        setInputTitle(task.title);
-        setInputTime(task.due_time || '');
-        setModalVisible(true);
-    };
+    // フィルタリング
+    const filteredPending = useMemo(() =>
+        tasks.filter(t => !t.is_done && t.title.toLowerCase().includes(searchQuery.toLowerCase())),
+        [tasks, searchQuery]);
 
-    const openCreate = () => {
-        setEditMode('create');
-        setInputTitle('');
-        setInputTime('');
-        setModalVisible(true);
-    };
+    const filteredTodayDone = useMemo(() =>
+        tasks.filter(t => t.is_done && t.title.toLowerCase().includes(searchQuery.toLowerCase())),
+        [tasks, searchQuery]);
 
-    const doneCount = tasks.filter(t => t.is_done).length;
-    const totalCount = tasks.length;
+    const groupedHistory = useMemo(() => {
+        const query = searchQuery.toLowerCase();
+        const matched = history.filter(t => t.title.toLowerCase().includes(query));
 
-    const renderTask = ({ item }: { item: Task }) => (
+        const sections: { title: string; data: Task[] }[] = [];
+        matched.forEach(t => {
+            const date = t.due_date || t.created_at.split('T')[0];
+            const found = sections.find(s => s.title === date);
+            if (found) found.data.push(t);
+            else sections.push({ title: date, data: [t] });
+        });
+        return sections.sort((a, b) => b.title.localeCompare(a.title));
+    }, [history, searchQuery]);
+
+    const renderTaskItem = ({ item }: { item: Task }) => (
         <TouchableOpacity
             style={[styles.taskCard, { backgroundColor: theme.surfaceLight }]}
             onPress={() => handleToggle(item)}
-            onLongPress={() => openEdit(item)}
+            onLongPress={() => {
+                setEditMode('edit');
+                setCurrentTaskId(item.id);
+                setInputTitle(item.title);
+                setInputTime(item.due_time || '');
+                setModalVisible(true);
+            }}
             activeOpacity={0.7}
         >
             <View style={styles.taskRow}>
                 <View style={[styles.checkbox, { borderColor: theme.primary }, item.is_done && { backgroundColor: theme.success, borderColor: theme.success }]}>
-                    {item.is_done && <Text style={styles.checkmark}>✓</Text>}
+                    {item.is_done && <Ionicons name="checkmark" size={14} color="#fff" />}
                 </View>
-
                 <View style={styles.taskInfo}>
                     <Text style={[styles.taskTitle, { color: theme.text }, item.is_done && styles.taskTitleDone]}>
                         {item.title}
                     </Text>
-                    <View style={styles.taskMeta}>
-                        {item.due_time && (
-                            <Text style={[styles.taskTime, { color: theme.primary }]}>⏰ {item.due_time}</Text>
-                        )}
-                        {item.event_title && (
-                            <Text style={[styles.taskEvent, { color: theme.textSecondary }]}>📅 {item.event_title}</Text>
-                        )}
-                    </View>
+                    {item.due_time && (
+                        <Text style={[styles.taskTime, { color: theme.primary }]}>⏰ {item.due_time}</Text>
+                    )}
                 </View>
             </View>
         </TouchableOpacity>
     );
 
-    const renderHistoryItem = ({ item }: { item: any }) => (
-        <View style={[styles.taskCard, { backgroundColor: theme.surfaceLight, opacity: 0.8 }]}>
-            <View style={styles.taskRow}>
-                <View style={[styles.checkbox, { backgroundColor: theme.textMuted, borderColor: theme.textMuted }]}>
-                    <Text style={styles.checkmark}>✓</Text>
-                </View>
-                <View style={styles.taskInfo}>
-                    <Text style={[styles.taskTitle, { color: theme.text, textDecorationLine: 'line-through' }]}>
-                        {item.title}
-                    </Text>
-                    <Text style={[styles.taskDate, { color: theme.textMuted }]}>
-                        完了: {item.due_date} {item.due_time || ''}
-                    </Text>
-                </View>
-                <TouchableOpacity onPress={() => handleDelete(item.id)}>
-                    <Text style={{ color: theme.error }}>🗑️</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-                <View>
-                    <Text style={[styles.headerTitle, { color: theme.text }]}>✅ タスク</Text>
-                </View>
-                <View style={styles.headerButtons}>
-                    <TouchableOpacity
-                        style={[styles.historyToggleButton, { borderColor: theme.border }]}
-                        onPress={() => setViewMode(viewMode === 'active' ? 'history' : 'active')}
-                    >
-                        <Text style={[styles.historyToggleText, { color: theme.primary }]}>
-                            {viewMode === 'active' ? '履歴 📜' : '戻る ←'}
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.addButton, { backgroundColor: theme.primary }]}
-                        onPress={openCreate}
-                    >
-                        <Text style={styles.addButtonText}>＋</Text>
-                    </TouchableOpacity>
-                </View>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>✅ タスク管理</Text>
+                <TouchableOpacity style={[styles.addButton, { backgroundColor: theme.primary }]} onPress={() => {
+                    setEditMode('create');
+                    setInputTitle('');
+                    setInputTime('');
+                    setModalVisible(true);
+                }}>
+                    <Ionicons name="add" size={24} color="#fff" />
+                </TouchableOpacity>
             </View>
 
-            {viewMode === 'active' && totalCount > 0 && (
-                <View style={styles.progressSection}>
-                    <View style={[styles.progressBar, { backgroundColor: theme.surfaceLight }]}>
-                        <View
-                            style={[
-                                styles.progressFill,
-                                { backgroundColor: theme.success, width: `${(doneCount / totalCount) * 100}%` },
-                            ]}
-                        />
-                    </View>
-                    <Text style={[styles.progressText, { color: theme.textSecondary }]}>
-                        {doneCount}/{totalCount}
-                    </Text>
-                </View>
+            {/* タブ切り替え */}
+            <View style={styles.tabBar}>
+                {(['pending', 'today_done', 'history'] as const).map(tab => (
+                    <TouchableOpacity
+                        key={tab}
+                        onPress={() => setActiveTab(tab)}
+                        style={[styles.tabItem, activeTab === tab && { borderBottomColor: theme.primary }]}
+                    >
+                        <Text style={[styles.tabText, { color: activeTab === tab ? theme.primary : theme.textMuted }]}>
+                            {tab === 'pending' ? '未達成' : tab === 'today_done' ? '完了' : '履歴'}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+
+            {/* 検索バー */}
+            <View style={[styles.searchArea, { backgroundColor: theme.surfaceLight }]}>
+                <Ionicons name="search" size={18} color={theme.textMuted} />
+                <TextInput
+                    style={[styles.searchInput, { color: theme.text }]}
+                    placeholder="何を探してるの？"
+                    placeholderTextColor={theme.textMuted}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                />
+            </View>
+
+            {activeTab === 'history' ? (
+                <SectionList
+                    sections={groupedHistory}
+                    keyExtractor={item => String(item.id)}
+                    renderItem={renderTaskItem}
+                    renderSectionHeader={({ section: { title } }) => (
+                        <Text style={[styles.sectionHeader, { color: theme.primary, backgroundColor: theme.background }]}>
+                            🗓️ {title}
+                        </Text>
+                    )}
+                    contentContainerStyle={styles.listContent}
+                    ListEmptyComponent={<Text style={styles.emptyText}>履歴はないわよ？</Text>}
+                />
+            ) : (
+                <FlatList
+                    data={activeTab === 'pending' ? filteredPending : filteredTodayDone}
+                    renderItem={renderTaskItem}
+                    keyExtractor={item => String(item.id)}
+                    contentContainerStyle={styles.listContent}
+                    ListEmptyComponent={<Text style={styles.emptyText}>何もないわね…</Text>}
+                />
             )}
 
-            <FlatList
-                data={viewMode === 'active' ? tasks : history}
-                renderItem={viewMode === 'active' ? renderTask : renderHistoryItem}
-                keyExtractor={item => String(item.id)}
-                contentContainerStyle={styles.listContent}
-                ListEmptyComponent={
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyEmoji}>{viewMode === 'active' ? '🎉' : '🦗'}</Text>
-                        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                            {viewMode === 'active'
-                                ? '全部完了！ 偉いわね、ぬるくん♡'
-                                : '履歴はまだないわよ？'}
-                        </Text>
-                    </View>
-                }
-                refreshing={loading}
-                onRefresh={viewMode === 'active' ? loadTasks : loadHistory}
-            />
-
-            <Modal visible={modalVisible} animationType="fade" transparent>
-                <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
+            <Modal visible={modalVisible} animationType="slide" transparent>
+                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
                     <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
                         <Text style={[styles.modalTitle, { color: theme.text }]}>
-                            {editMode === 'create' ? '✅ タスクを追加' : '✅ タスクを編集'}
+                            {editMode === 'create' ? 'タスクを追加' : 'タスクを編集'}
                         </Text>
-
                         <TextInput
-                            style={[styles.modalInput, { backgroundColor: theme.surfaceLight, color: theme.text, borderColor: theme.border }]}
-                            placeholder="何をするの？"
-                            placeholderTextColor={theme.textMuted}
+                            style={[styles.modalInput, { color: theme.text, borderColor: theme.border }]}
                             value={inputTitle}
                             onChangeText={setInputTitle}
+                            placeholder="何をするの？"
+                            placeholderTextColor={theme.textMuted}
                         />
-
-                        <View style={styles.timeInputRow}>
-                            <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>期限時刻:</Text>
-                            <TextInput
-                                style={[styles.timeInput, { backgroundColor: theme.surfaceLight, color: theme.text, borderColor: theme.border }]}
-                                placeholder="18:00"
-                                placeholderTextColor={theme.textMuted}
-                                value={inputTime}
-                                onChangeText={setInputTime}
-                                keyboardType="numbers-and-punctuation"
-                                maxLength={5}
-                            />
-                        </View>
-
                         <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalCancel, { backgroundColor: theme.surfaceLight }]}
-                                onPress={() => setModalVisible(false)}
-                            >
-                                <Text style={[styles.modalCancelText, { color: theme.textSecondary }]}>キャンセル</Text>
+                            <TouchableOpacity style={styles.modalBtn} onPress={() => setModalVisible(false)}>
+                                <Text style={{ color: theme.textSecondary }}>キャンセル</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalSubmit, { backgroundColor: theme.primary }]}
-                                onPress={handleSaveTask}
-                            >
-                                <Text style={styles.modalSubmitText}>保存♡</Text>
+                            <TouchableOpacity style={[styles.modalBtn, { backgroundColor: theme.primary }]} onPress={handleSaveTask}>
+                                <Text style={{ color: '#fff' }}>保存♡</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -308,6 +265,34 @@ export default function TaskScreen() {
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: { flex: 1 },
+    header: { paddingTop: 60, paddingBottom: 15, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1 },
+    headerTitle: { fontSize: 20, fontWeight: '800' },
+    addButton: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+    tabBar: { flexDirection: 'row', paddingHorizontal: 10 },
+    tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 3, borderBottomColor: 'transparent' },
+    tabText: { fontSize: 13, fontWeight: '700' },
+    searchArea: { flexDirection: 'row', alignItems: 'center', margin: 15, paddingHorizontal: 15, borderRadius: 12, height: 40 },
+    searchInput: { flex: 1, marginLeft: 10, fontSize: 14 },
+    listContent: { paddingHorizontal: 20, paddingBottom: 100 },
+    taskCard: { padding: 15, borderRadius: 15, marginBottom: 10 },
+    taskRow: { flexDirection: 'row', alignItems: 'center' },
+    checkbox: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, marginRight: 15, alignItems: 'center', justifyContent: 'center' },
+    taskInfo: { flex: 1 },
+    taskTitle: { fontSize: 16, fontWeight: '600' },
+    taskTitleDone: { textDecorationLine: 'line-through', opacity: 0.5 },
+    taskTime: { fontSize: 12, fontWeight: '700', marginTop: 4 },
+    sectionHeader: { fontSize: 12, fontWeight: '800', paddingVertical: 10, marginTop: 10 },
+    emptyText: { textAlign: 'center', marginTop: 50, opacity: 0.5 },
+    modalOverlay: { flex: 1, justifyContent: 'center', padding: 20 },
+    modalContent: { padding: 25, borderRadius: 20 },
+    modalTitle: { fontSize: 18, fontWeight: '800', marginBottom: 20 },
+    modalInput: { borderWidth: 1, borderRadius: 12, padding: 15, marginBottom: 20, fontSize: 16 },
+    modalButtons: { flexDirection: 'row', gap: 15 },
+    modalBtn: { flex: 1, padding: 15, borderRadius: 12, alignItems: 'center' },
+});
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
