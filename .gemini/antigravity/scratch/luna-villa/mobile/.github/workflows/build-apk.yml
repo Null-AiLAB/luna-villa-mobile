@@ -1,0 +1,69 @@
+name: Build Android APK
+on:
+  workflow_dispatch: # 手動実行用
+  push:
+    branches:
+      - main # mainにpushした時もビルド
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 🏗 Checkout
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 🤖 Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 🚀 Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🛠 Build APK (Local)
+        run: eas build --platform android --profile preview --local --non-interactive
+
+      - name: 📄 Get APK path
+        id: apk-path
+        run: |
+          APK_PATH=$(find . -name "*.apk" | head -n 1)
+          echo "path=$APK_PATH" >> $GITHUB_OUTPUT
+
+      - name: ⬆️ Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: luna-villa-apk
+          path: ${{ steps.apk-path.outputs.path }}
+
+      - name: 🚀 Create Release
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Luna Villa Build v${{ github.run_number }}
+          files: ${{ steps.apk-path.outputs.path }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

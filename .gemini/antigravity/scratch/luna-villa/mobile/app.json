@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "Luna Villa",
+    "slug": "luna-villa",
+    "version": "1.2.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#000080"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nulle.lunavilla"
+    },
+    "android": {
+      "package": "com.nulle.lunavilla",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#000080"
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "るなと思い出を共有するために、写真へのアクセスを許可してね♡"
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "るなとお喋りするために、マイクの使用を許可してね♡"
+        }
+      ],
+      "expo-notifications",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2417d956-57f0-46d3-9e02-1581f70db436"
+      }
+    },
+    "owner": "null.exe"
+  }
+}
