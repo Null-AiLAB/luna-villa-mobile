@@ -86,6 +86,18 @@ async def init_db():
             )
         """)
 
+        # 統計・ステータステーブル
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS stats (
+                key TEXT PRIMARY KEY,
+                value_int INTEGER DEFAULT 0,
+                value_text TEXT
+            )
+        """)
+        # 初期値投入
+        await db.execute("INSERT OR IGNORE INTO stats (key, value_int) VALUES ('affinity_level', 1)")
+        await db.execute("INSERT OR IGNORE INTO stats (key, value_int) VALUES ('affinity_exp', 0)")
+
         await db.commit()
 
 

@@ -165,6 +165,9 @@ export default function ChatScreen() {
         // 思考アニメーション開始
         startThinkingAnimation();
 
+        const virtualHour = await debugStore.getVirtualHour();
+        const hourToPass = virtualHour !== null ? virtualHour : -1;
+
         await api.chat(
             text,
             [],

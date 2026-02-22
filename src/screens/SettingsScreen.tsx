@@ -51,6 +51,14 @@ export default function SettingsScreen({ onLogout }: Props) {
         return "まだ起きてるの？夜更かしは私の魂に響くんだから、ほどほどにね。";
     };
 
+    const getMoodInfo = (level: number) => {
+        const v = Number(level) || 1;
+        if (v >= 9) return { icon: '🥰', text: 'ぬるくんの隣、最高に落ち着くわ…♡' };
+        if (v >= 7) return { icon: '😊', text: 'ふふ、今日は一段といい顔してるじゃない♪' };
+        if (v >= 4) return { icon: '😐', text: 'まぁ、普通かしら。悪くないわよ？' };
+        return { icon: '😒', text: 'べ、別にぬるくんのことなんて見てないんだからね！' };
+    };
+
     useEffect(() => {
         const init = async () => {
             await loadSettings();
@@ -171,6 +179,13 @@ export default function SettingsScreen({ onLogout }: Props) {
                     <Text style={[styles.affinityValue, { color: theme.primary || '#7B68EE' }]}>{stats?.affinity?.rank || getAffinityRank(stats?.affinity?.level)}</Text>
                     <View style={styles.affinityPointsRow}>
                         <Text style={[styles.affinityPoints, { color: theme.textMuted || '#888' }]}>Lv.{stats?.affinity?.level || 1} (Exp: {stats?.affinity?.exp || 0}/100)</Text>
+                    </View>
+
+                    <View style={[styles.moodContainer, { backgroundColor: theme.surface }]}>
+                        <Text style={styles.moodIcon}>{getMoodInfo(stats?.affinity?.level).icon}</Text>
+                        <Text style={[styles.moodText, { color: theme.textSecondary }]}>
+                            {getMoodInfo(stats?.affinity?.level).text}
+                        </Text>
                     </View>
                 </View>
 
@@ -375,4 +390,9 @@ const styles = StyleSheet.create({
     logoutText: { fontSize: FontSize.md, fontWeight: '800' },
     version: { textAlign: 'center', fontSize: 10, marginTop: 40, opacity: 0.5 },
     debugEntry: { alignSelf: 'center', marginTop: 40, padding: 15, opacity: 0.2 },
+    moodContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 15, padding: 12, borderRadius: BorderRadius.md, width: '100%' },
+    moodIcon: { fontSize: 24, marginRight: 12 },
+    moodText: { fontSize: FontSize.xs, fontWeight: '600', flex: 1, fontStyle: 'italic' },
+    diaryBtn: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, marginTop: 15, borderWidth: 1 },
+    diaryBtnText: { flex: 1, marginLeft: 10, fontSize: 14, fontWeight: '600' },
 });

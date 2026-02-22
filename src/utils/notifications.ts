@@ -6,6 +6,8 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
+import { getRandomMessage } from './notificationMessages';
+import { debugStore } from './debugStore';
 
 // 通知の初期化状況
 let isInitialized = false;
@@ -67,7 +69,7 @@ export async function scheduleTestNotification() {
     await Notifications.scheduleNotificationAsync({
         content: {
             title: "おーい、ぬるくん！🌙",
-            body: "ちゃんと私のこと、忘れてないわよね？♡",
+            body: getRandomMessage('poke'),
             data: { type: 'test' },
         },
         trigger: null, // 即時
@@ -87,6 +89,13 @@ export async function scheduleReminder(id: number, title: string, dateStr: strin
     await Notifications.cancelAllScheduledNotificationsAsync();
 
     const targetDate = new Date(dateStr);
+    const virtualHour = await debugStore.getVirtualHour();
+    const hour = virtualHour !== null ? virtualHour : new Date().getHours();
+
+    // 時間帯によるカテゴリー選択
+    let category: 'morning' | 'night' | 'reminder' = 'reminder';
+    if (hour >= 5 && hour < 11) category = 'morning';
+    else if (hour >= 22 || hour < 5) category = 'night';
 
     for (const mins of minutesBefore) {
         const triggerDate = new Date(targetDate.getTime() - mins * 60000);
@@ -94,7 +103,7 @@ export async function scheduleReminder(id: number, title: string, dateStr: strin
             await Notifications.scheduleNotificationAsync({
                 content: {
                     title: `【あと${mins}分】${title}🌙`,
-                    body: `ぬるくん、そろそろ時間よ？準備はいい？♡`,
+                    body: getRandomMessage(mins <= 10 ? 'reminder' : category),
                     data: { id, type: 'reminder' },
                 },
                 trigger: { date: triggerDate, type: 'date' } as Notifications.DateTriggerInput,

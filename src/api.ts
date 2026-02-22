@@ -90,6 +90,7 @@ class ApiClient {
         onChunk: (text: string) => void,
         onDone: () => void,
         onError: (err: string) => void,
+        currentHour: number = -1,
     ) {
         try {
             const xhr = new XMLHttpRequest();
@@ -135,7 +136,7 @@ class ApiClient {
             };
 
             xhr.onerror = () => onError('サーバーに届かないみたい… 接続を確認して？');
-            xhr.send(JSON.stringify({ message, image_data: imageData }));
+            xhr.send(JSON.stringify({ message, image_data: imageData, current_hour: currentHour }));
 
         } catch (e: any) {
             console.error('Chat error:', e);
@@ -372,6 +373,40 @@ class ApiClient {
             console.error('deleteTask error:', e);
             throw e;
         }
+    }
+
+    // ─── 汎用メソッド (v1.2.0 Phase 3) ──
+    async get(endpoint: string) {
+        try {
+            const res = await fetch(`${this.baseUrl}${endpoint}`, { headers: this.headers() });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.json();
+        } catch (e) {
+            console.error(`GET ${endpoint} error:`, e);
+            throw e;
+        }
+    }
+
+    async post(endpoint: string, body: any) {
+        try {
+            const res = await fetch(`${this.baseUrl}${endpoint}`, {
+                method: 'POST',
+                headers: this.headers(),
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.json();
+        } catch (e) {
+            console.error(`POST ${endpoint} error:`, e);
+            throw e;
+        }
+    }
+
+    /**
+     * 秘密の日記を取得するわ
+     */
+    async getDiary() {
+        return this.get('/api/diary');
     }
 }
 

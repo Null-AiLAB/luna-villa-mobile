@@ -18,6 +18,8 @@ import TaskScreen from './src/screens/TaskScreen';
 import MemoScreen from './src/screens/MemoScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import DebugMenuScreen from './src/screens/DebugMenuScreen';
+import LogViewerScreen from './src/screens/LogViewerScreen';
+import SecretDiaryScreen from './src/screens/SecretDiaryScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -93,6 +95,10 @@ function AppContent() {
     }
   };
 
+  const handleLogout = useCallback(() => {
+    setIsLoggedIn(false);
+  }, []);
+
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.background || '#0D0B1A' }]}>
@@ -135,9 +141,11 @@ function AppContent() {
       }}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="MainTabs">
-            {() => <MainTabs onLogout={() => setIsLoggedIn(false)} />}
+            {() => <MainTabs onLogout={handleLogout} />}
           </Stack.Screen>
           <Stack.Screen name="DebugMenu" component={DebugMenuScreen} />
+          <Stack.Screen name="LogViewer" component={LogViewerScreen} />
+          <Stack.Screen name="SecretDiary" component={SecretDiaryScreen} />
         </Stack.Navigator>
       </NavigationContainer>
 

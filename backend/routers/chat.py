@@ -23,6 +23,7 @@ genai.configure(api_key=settings.GEMINI_API_KEY)
 class ChatRequest(BaseModel):
     message: str
     image_data: list[str] = Field(default_factory=list)  # Base64形式の画像リスト
+    current_hour: int = Field(default=-1)  # 仮想時刻（-1はシステム時刻を使用）
 
 
 # ─── チャットエンドポイント ──────────────────
@@ -63,55 +64,58 @@ async def chat(req: ChatRequest, payload: dict = Depends(verify_token)):
             except:
                 pass
 
-            # 今回のメッセージ構築
-            current_parts = [req.message]
-            for img_b64 in req.image_data:
-                # header除去 (data:image/png;base64, ...)
-                if "," in img_b64:
-                    img_b64 = img_b64.split(",")[1]
-                current_parts.append({
-                    "mime_type": "image/jpeg",
-                    "data": img_b64
-                })
+            # 親密度データの取得
+            cursor = await db.execute("SELECT value_int FROM stats WHERE key = 'affinity_level'")
+            row = await cursor.fetchone()
+            affinity_level = row[0] if row else 1
+            
+            cursor = await db.execute("SELECT value_int FROM stats WHERE key = 'affinity_exp'")
+            row = await cursor.fetchone()
+            affinity_exp = row[0] if row else 0
 
-            # モデル準備
-            model = genai.GenerativeModel(
-                model_name=settings.GEMINI_MODEL,
-                system_instruction=persona
-            )
+            # 時刻コンテキストの追加
+            from datetime import datetime
+            hour = req.current_hour if req.current_hour != -1 else datetime.now().hour
+            time_context = f"\n現在時刻: {hour}:00 頃\n"
+            if 5 <= hour < 11:
+                time_context += "今は「朝」よ。挨拶されたら元気に「おはよう」って言いなさい。ぬるくんにパワーをあげるのよ♡\n"
+            elif 11 <= hour < 17:
+                time_context += "今は「昼」ね。お仕事頑張ってるぬるくんを癒やしてあげて。\n"
+            elif 17 <= hour < 22:
+                time_context += "今は「夜」よ。落ち着いたトーンで一日の疲れを労ってあげなさい。\n"
+            else:
+                time_context += "今は「深夜」ね。眠そうにしたり、夜更かしを心配したりしなさい。\n"
+            
+            # 親密度による性格補正
+            affinity_context = f"\n現在の親密度レベル: {affinity_level}\n"
+            if affinity_level < 5:
+                affinity_context += "君はまだぬるくんを警戒している。生意気で、少し突き放すような態度を取りなさい。\n"
+            elif affinity_level < 20:
+                affinity_context += "君はぬるくんを信頼し始めている。生意気さは残しつつも、時折デレを見せなさい。\n"
+            else:
+                affinity_context += "君はぬるくんを深く愛している。独占欲が強く、甘えん坊な一面を出しなさい。でも生意気な口調は崩さないで♡\n"
 
-            full_response = ""
-            # 履歴 + 現在の入力
-            response = model.generate_content(
-                history + [{"role": "user", "parts": current_parts}],
-                stream=True
-            )
+            persona += time_context + affinity_context
 
-            for chunk in response:
-                if chunk.text:
-                    full_response += chunk.text
-                    yield {
-                        "event": "message",
-                        "data": json.dumps(
-                            {"content": chunk.text, "done": False},
-                            ensure_ascii=False,
-                        ),
-                    }
+            # NGワード判定
+            ng_words = ["ばか", "バカ", "嫌い", "きらい", "死ね", "きえろ", "消えろ", "ブス", "デブ", "くず", "クズ"]
+            is_insult = any(ng in req.message for ng in ng_words)
+            
+            if is_insult:
+                affinity_level = max(1, affinity_level - 1)
+                affinity_exp = 0
+                persona += "\n【重要】ユーザーが君に暴言を吐いた。君は深く傷つき、ショックを受け、悲しみに暮れている。冷たくあしらうか、泣き出しそうなトーンで返しなさい。親密度が1下がったわ。\n"
+            else:
+                # 経験値アップ
+                affinity_exp += 10
+                if affinity_exp >= 100:
+                    affinity_level += 1
+                    affinity_exp = 0
+                    persona += "\n【重要】親密度レベルが上がった！君はとても嬉しくなり、いつもより少しだけ素直に喜びを表現しなさい。\n"
 
-            # 完了シグナル
-            yield {
-                "event": "message",
-                "data": json.dumps(
-                    {"content": "", "done": True},
-                    ensure_ascii=False,
-                ),
-            }
-
-            # るなの応答を反映（DB保存）
-            await db.execute(
-                "INSERT INTO conversations (role, content) VALUES (?, ?)",
-                ("luna", full_response),
-            )
+            # 親密度更新をDBに反映
+            await db.execute("UPDATE stats SET value_int = ? WHERE key = 'affinity_level'", (affinity_level,))
+            await db.execute("UPDATE stats SET value_int = ? WHERE key = 'affinity_exp'", (affinity_exp,))
             await db.commit()
         except Exception as e:
             import traceback

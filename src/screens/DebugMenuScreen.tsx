@@ -115,6 +115,27 @@ export default function DebugMenuScreen({ navigation }: any) {
                     </View>
                 </View>
 
+                <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>🔍 システムログ監視</Text>
+                <View style={[styles.card, { backgroundColor: theme.surfaceLight }]}>
+                    <TouchableOpacity
+                        style={styles.logBtn}
+                        onPress={() => navigation.navigate('LogViewer', { type: 'greetings' })}
+                    >
+                        <Ionicons name="chatbubbles-outline" size={20} color={theme.primary} />
+                        <Text style={[styles.logBtnText, { color: theme.text }]}>挨拶履歴ログを表示</Text>
+                        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+                    </TouchableOpacity>
+                    <View style={styles.divider} />
+                    <TouchableOpacity
+                        style={styles.logBtn}
+                        onPress={() => navigation.navigate('LogViewer', { type: 'diary' })}
+                    >
+                        <Ionicons name="book-outline" size={20} color={theme.primary} />
+                        <Text style={[styles.logBtnText, { color: theme.text }]}>秘密日記ログを表示</Text>
+                        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+                    </TouchableOpacity>
+                </View>
+
                 <TouchableOpacity style={[styles.dangerBtn, { backgroundColor: theme.surfaceLight }]} onPress={() => Alert.alert('Reloading...', 'Reload dummy')}>
                     <Text style={{ color: theme.warning }}>🔄 アプリを再起動 (Simulated)</Text>
                 </TouchableOpacity>
@@ -122,8 +143,8 @@ export default function DebugMenuScreen({ navigation }: any) {
                 <Text style={styles.footer}>
                     「時間は私の玩具。ぬるくん、私の気持ちも自由自在ね？♡」
                 </Text>
-            </ScrollView>
-        </View>
+            </ScrollView >
+        </View >
     );
 }
 
@@ -142,5 +163,8 @@ const styles = StyleSheet.create({
     btnWide: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, backgroundColor: 'rgba(123, 104, 238, 0.05)', alignItems: 'center' },
     value: { fontSize: 24, fontWeight: '800' },
     dangerBtn: { padding: 15, borderRadius: 12, alignItems: 'center', marginTop: 20 },
+    logBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+    logBtnText: { flex: 1, fontSize: 14, fontWeight: '600', marginLeft: 15 },
+    divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginVertical: 2 },
     footer: { textAlign: 'center', marginTop: 40, opacity: 0.5, fontStyle: 'italic', fontSize: 12 },
 });

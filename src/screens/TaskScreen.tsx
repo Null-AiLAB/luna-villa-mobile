@@ -137,42 +137,59 @@ export default function TaskScreen() {
 
         const sections: { title: string; data: Task[] }[] = [];
         matched.forEach(t => {
-            const date = t.due_date || t.created_at.split('T')[0];
-            const found = sections.find(s => s.title === date);
+            const dateStr = t.due_date || t.created_at.split('T')[0];
+            const [y, m] = dateStr.split('-');
+            const title = `${y}年 ${m}月`;
+            const found = sections.find(s => s.title === title);
             if (found) found.data.push(t);
-            else sections.push({ title: date, data: [t] });
+            else sections.push({ title: title, data: [t] });
         });
+
+        // 月内の降順ソート
+        sections.forEach(s => {
+            s.data.sort((a, b) => {
+                const da = a.due_date || a.created_at.split('T')[0];
+                const db = b.due_date || b.created_at.split('T')[0];
+                return db.localeCompare(da);
+            });
+        });
+
         return sections.sort((a, b) => b.title.localeCompare(a.title));
     }, [history, searchQuery]);
 
-    const renderTaskItem = ({ item }: { item: Task }) => (
-        <TouchableOpacity
-            style={[styles.taskCard, { backgroundColor: theme.surfaceLight }]}
-            onPress={() => handleToggle(item)}
-            onLongPress={() => {
-                setEditMode('edit');
-                setCurrentTaskId(item.id);
-                setInputTitle(item.title);
-                setInputTime(item.due_time || '');
-                setModalVisible(true);
-            }}
-            activeOpacity={0.7}
-        >
-            <View style={styles.taskRow}>
-                <View style={[styles.checkbox, { borderColor: theme.primary }, item.is_done && { backgroundColor: theme.success, borderColor: theme.success }]}>
-                    {item.is_done && <Ionicons name="checkmark" size={14} color="#fff" />}
+    const renderTaskItem = ({ item }: { item: Task }) => {
+        const dateStr = item.due_date || item.created_at.split('T')[0];
+        const day = dateStr.split('-')[2];
+
+        return (
+            <TouchableOpacity
+                style={[styles.taskCard, { backgroundColor: theme.surfaceLight }]}
+                onPress={() => handleToggle(item)}
+                onLongPress={() => {
+                    setEditMode('edit');
+                    setCurrentTaskId(item.id);
+                    setInputTitle(item.title);
+                    setInputTime(item.due_time || '');
+                    setModalVisible(true);
+                }}
+                activeOpacity={0.7}
+            >
+                <View style={styles.taskRow}>
+                    <View style={[styles.checkbox, { borderColor: theme.primary }, item.is_done && { backgroundColor: theme.success, borderColor: theme.success }]}>
+                        {item.is_done && <Ionicons name="checkmark" size={14} color="#fff" />}
+                    </View>
+                    <View style={styles.taskInfo}>
+                        <Text style={[styles.taskTitle, { color: theme.text }, item.is_done && styles.taskTitleDone]}>
+                            {activeTab === 'history' ? `${day}日：` : ''}{item.title}
+                        </Text>
+                        {item.due_time && (
+                            <Text style={[styles.taskTime, { color: theme.primary }]}>⏰ {item.due_time}</Text>
+                        )}
+                    </View>
                 </View>
-                <View style={styles.taskInfo}>
-                    <Text style={[styles.taskTitle, { color: theme.text }, item.is_done && styles.taskTitleDone]}>
-                        {item.title}
-                    </Text>
-                    {item.due_time && (
-                        <Text style={[styles.taskTime, { color: theme.primary }]}>⏰ {item.due_time}</Text>
-                    )}
-                </View>
-            </View>
-        </TouchableOpacity>
-    );
+            </TouchableOpacity>
+        );
+    };
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
